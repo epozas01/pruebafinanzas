@@ -599,28 +599,42 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 </nav>
 
 <script>
-const ACCOUNTS=[
-  {name:'BBVA Chequera',    type:'banco',    currency:'MXN',group:'chequeras', color:'#1565C0',bg:'#E3F2FD',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>'},
-  {name:'BBVA Apartados',   type:'banco',    currency:'MXN',group:'chequeras', color:'#1976D2',bg:'#E3F2FD',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>'},
-  {name:'Nu Chequera',      type:'banco',    currency:'MXN',group:'chequeras', color:'#7B1FA2',bg:'#F3E5F5',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>'},
-  {name:'Revolut Chequera', type:'banco',    currency:'USD',group:'chequeras', color:'#0D47A1',bg:'#E8EAF6',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'},
-  {name:'Nu SmartCash',     type:'hibrida',  currency:'MXN',group:'smartcash', color:'#6A1B9A',bg:'#F3E5F5',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
-  {name:'Revolut SmartCash',type:'hibrida',  currency:'USD',group:'smartcash', color:'#283593',bg:'#E8EAF6',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
-  {name:'Nu Crédito',       type:'credito',  currency:'MXN',group:'credito',   color:'#B71C1C',bg:'#FFEBEE',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'},
-  {name:'BBVA Crédito',     type:'credito',  currency:'MXN',group:'credito',   color:'#C62828',bg:'#FFEBEE',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'},
-  {name:'GBM',              type:'inversion',currency:'MXN',group:'inversiones',color:'#1B5E20',bg:'#E8F5E9',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},
-  {name:'Interactive Brokers',type:'inversion',currency:'USD',group:'inversiones',color:'#004D40',bg:'#E0F2F1',
-   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},
-];
+// ACCOUNTS is built dynamically from the Sheet via syncFromSheet
+let ACCOUNTS = [];
+try { ACCOUNTS = JSON.parse(localStorage.getItem('fin_accounts') || '[]'); } catch(e) {}
+
+// Maps Sheet Type value to internal app type key
+function sheetTypeToAppType(t) {
+  const m = {
+    'banco':'banco','bank':'banco',
+    'hibrida':'hibrida','híbrida':'hibrida','hybrid':'hibrida','smartcash':'hibrida',
+    'credito':'credito','crédito':'credito','credit':'credito',
+    'inversion':'inversion','inversión':'inversion','investment':'inversion',
+  };
+  return m[(t||'').toLowerCase().trim()] || 'banco';
+}
+
+function typeToGroup(t) {
+  if(t==='hibrida') return 'smartcash';
+  if(t==='credito') return 'credito';
+  if(t==='inversion') return 'inversiones';
+  return 'chequeras';
+}
+
+function buildAccountObj(a) {
+  const type = sheetTypeToAppType(a.Type || a.type || '');
+  const group = typeToGroup(type);
+  const cur = (a.Currency || a.currency || 'MXN').toString().trim().toUpperCase();
+  const ICONS = {
+    banco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
+    hibrida: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    credito: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+    inversion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+  };
+  const COLORS = { chequeras:{color:'#1565C0',bg:'#E3F2FD'}, smartcash:{color:'#6A1B9A',bg:'#F3E5F5'}, credito:{color:'#B71C1C',bg:'#FFEBEE'}, inversiones:{color:'#1B5E20',bg:'#E8F5E9'} };
+  const c = COLORS[group] || COLORS.chequeras;
+  return { name: (a.Name||a.name||'').toString().trim(), type, group, currency: cur, color: c.color, bg: c.bg, icon: ICONS[type]||ICONS.banco };
+}
 const GROUPS={
   chequeras:  {label:'Chequeras',           bg:'#E3F2FD',tc:'#1565C0',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>'},
@@ -638,33 +652,14 @@ const TX_SVG={
   transfer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
 };
 
-let txType='income',txs=[],initialBalances={},categories=[];
+let txType='income',txs=[],initialBalances={},categories=[],budgets=[];
+let budgetMonth = new Date();
 try{txs=JSON.parse(localStorage.getItem('fin_txs_v2')||'[]');}catch(e){}
 try{initialBalances=JSON.parse(localStorage.getItem('fin_init_bal')||'{}');}catch(e){}
 try{categories=JSON.parse(localStorage.getItem('fin_cats')||'[]');}catch(e){}
+try{budgets=JSON.parse(localStorage.getItem('fin_budgets')||'[]');}catch(e){}
 
-const DEFAULT_CATS=[
-  {Category:'Comida y restaurantes',Subcategory:'',Type:'expense'},
-  {Category:'Supermercado',Subcategory:'',Type:'expense'},
-  {Category:'Transporte',Subcategory:'',Type:'expense'},
-  {Category:'Gasolina',Subcategory:'',Type:'expense'},
-  {Category:'Vivienda / Renta',Subcategory:'',Type:'expense'},
-  {Category:'Servicios',Subcategory:'',Type:'expense'},
-  {Category:'Salud',Subcategory:'',Type:'expense'},
-  {Category:'Entretenimiento',Subcategory:'',Type:'expense'},
-  {Category:'Suscripciones',Subcategory:'',Type:'expense'},
-  {Category:'Ropa y compras',Subcategory:'',Type:'expense'},
-  {Category:'Viajes',Subcategory:'',Type:'expense'},
-  {Category:'Educación',Subcategory:'',Type:'expense'},
-  {Category:'Salario',Subcategory:'',Type:'income'},
-  {Category:'Freelance',Subcategory:'',Type:'income'},
-  {Category:'Rendimiento Nu',Subcategory:'',Type:'income'},
-  {Category:'Rendimiento Revolut',Subcategory:'',Type:'income'},
-  {Category:'Retiro inversión',Subcategory:'',Type:'income'},
-  {Category:'Otro',Subcategory:'',Type:'both'},
-];
-
-function getSrc(){ return categories.length ? categories : DEFAULT_CATS; }
+function getSrc(){ return categories; }
 
 // Get unique top-level categories for a given type
 function getTopCats(type) {
@@ -687,12 +682,13 @@ function getSubcats(cat, type) {
 
 function populateCategories() {
   const type = txType === 'transfer' ? 'both' : txType;
-  const cats = getTopCats(type);
-  // Also include categories that have 'both' or match type
-  const allCats = categories.length
-    ? [...new Set(getSrc().filter(c=>c.Type===type||c.Type==='both').map(c=>c.Category||c.Name||''))]
-    : getTopCats(type);
-  document.getElementById('category').innerHTML = allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const allCats = [...new Set(getSrc().filter(c=>c.Type===type||c.Type==='both').map(c=>c.Category||c.Name||''))];
+  const sel = document.getElementById('category');
+  if (!allCats.length) {
+    sel.innerHTML = '<option value="">— Sincroniza para cargar —</option>';
+  } else {
+    sel.innerHTML = allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
   onCategoryChange();
 }
 
@@ -711,7 +707,16 @@ function onCategoryChange() {
   }
 }
 
-function populateSelects(){['account','to-account'].forEach(id=>{document.getElementById(id).innerHTML=ACCOUNTS.map(a=>`<option value="${a.name}">${a.name}</option>`).join('');});}
+function populateSelects(){
+  ['account','to-account'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!ACCOUNTS.length){
+      sel.innerHTML='<option value="">— Sincroniza para cargar —</option>';
+    } else {
+      sel.innerHTML=ACCOUNTS.map(a=>`<option value="${a.name}">${a.name}</option>`).join('');
+    }
+  });
+}
 
 document.getElementById('txdate').value=new Date().toISOString().split('T')[0];
 document.getElementById('header-date').textContent=new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
@@ -909,16 +914,30 @@ function saveUrl(){
 async function syncFromSheet(){
   const url=localStorage.getItem('fin_webapp_url');if(!url)return;
   const btn=document.getElementById('sync-btn'),st=document.getElementById('sync-status');
-  if(btn){btn.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> Sincronizando...';btn.disabled=true;}
+  const ICON_SYNC='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
+  if(btn){btn.innerHTML=ICON_SYNC+' Sincronizando...';btn.disabled=true;}
   try{
     const res=await fetch(url,{method:'GET'}),json=await res.json();
-    if(json.accounts&&Array.isArray(json.accounts)){const ib={};json.accounts.forEach(a=>{if(a.Name)ib[a.Name]=parseFloat(a.InitialBalance)||0;});initialBalances=ib;try{localStorage.setItem('fin_init_bal',JSON.stringify(ib));}catch(e){}}
-    if(json.categories&&Array.isArray(json.categories)&&json.categories.length>0){
+    console.log('[Sync] keys:', Object.keys(json));
+    console.log('[Sync] budgets:', json.budgets?.length, 'categories:', json.categories?.length, 'accounts:', json.accounts?.length, 'txs:', json.transactions?.length);
+    if(json.budgets&&json.budgets.length>0) console.log('[Sync] First budget row:', JSON.stringify(json.budgets[0]));
+
+    if(json.accounts&&Array.isArray(json.accounts)){
+      const ib={};json.accounts.forEach(a=>{if(a.Name)ib[a.Name]=parseFloat(a.InitialBalance)||0;});
+      initialBalances=ib;try{localStorage.setItem('fin_init_bal',JSON.stringify(ib));}catch(e){}
+      ACCOUNTS=json.accounts.map(buildAccountObj).filter(a=>a.name);
+      try{localStorage.setItem('fin_accounts',JSON.stringify(ACCOUNTS));}catch(e){}
+      populateSelects();
+    }
+    if(json.categories&&Array.isArray(json.categories)){
       categories=json.categories;
       try{localStorage.setItem('fin_cats',JSON.stringify(categories));}catch(e){}
       populateCategories();
     }
-    if(json.budgets&&Array.isArray(json.budgets)&&json.budgets.length>0){budgets=json.budgets;try{localStorage.setItem('fin_budgets',JSON.stringify(budgets));}catch(e){}}
+    if(json.budgets&&Array.isArray(json.budgets)){
+      budgets=json.budgets;
+      try{localStorage.setItem('fin_budgets',JSON.stringify(budgets));}catch(e){}
+    }
     if(json.status==='ok'&&Array.isArray(json.transactions)&&json.transactions.length>0){
       txs=json.transactions.map((t,i)=>({
         id:t.Date+'_'+i, type:t.Type, amount:parseFloat(t.Amount)||0, currency:t.Currency,
@@ -929,18 +948,24 @@ async function syncFromSheet(){
       })).filter(t=>t.type&&t.amount>0);
       try{localStorage.setItem('fin_txs_v2',JSON.stringify(txs));}catch(e){}
       updateLocalCount();renderRecent();
-      if(st){st.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> '+txs.length+' transacciones sincronizadas';st.className='status-msg ok';}
-    }else{if(st){st.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Cuentas y categorías actualizadas';st.className='status-msg ok';}renderRecent();}
-  }catch(err){if(st){st.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Error — revisa la URL';st.className='status-msg err';}}
-  finally{if(btn){btn.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> Sincronizar desde Sheets';btn.disabled=false;}}
+    } else { renderRecent(); }
+    const parts=[];
+    if(json.transactions?.length) parts.push(json.transactions.length+' transacciones');
+    if(json.accounts?.length) parts.push(json.accounts.length+' cuentas');
+    if(json.categories?.length) parts.push(json.categories.length+' categorías');
+    if(json.budgets?.length) parts.push(json.budgets.length+' budgets');
+    if(st){st.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> '+(parts.length?parts.join(', '):'Sin datos');st.className='status-msg ok';}
+  }catch(err){
+    console.error('[Sync] Error:',err);
+    if(st){st.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Error: '+err.message;st.className='status-msg err';}
+  }finally{
+    if(btn){btn.innerHTML=ICON_SYNC+' Sincronizar desde Sheets';btn.disabled=false;}
+  }
 }
 function updateLocalCount(){const el=document.getElementById('local-count');if(el)el.textContent=txs.length+' transacciones guardadas localmente';}
 function exportData(){const blob=new Blob([JSON.stringify(txs,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='finanzas_backup.json';a.click();URL.revokeObjectURL(url);}
 
 // BUDGET
-let budgets = [];
-let budgetMonth = new Date();
-try { budgets = JSON.parse(localStorage.getItem('fin_budgets') || '[]'); } catch(e) {}
 
 function changeMonth(dir) {
   budgetMonth = new Date(budgetMonth.getFullYear(), budgetMonth.getMonth() + dir, 1);
@@ -1206,5 +1231,7 @@ function renderBudget() {
   });
 
 </script>
+</body>
+</html>
 </body>
 </html>
