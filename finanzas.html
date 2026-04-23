@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Finanzas">
+<meta name="theme-color" content="#ffffff">
+<title>Finanzas</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f5;
+    --bg3: #ebebeb;
+    --text: #1a1a1a;
+    --text2: #666666;
+    --border: rgba(0,0,0,0.12);
+    --green: #1D9E75;
+    --red: #D85A30;
+    --blue: #378ADD;
+    --purple: #534AB7;
+    --amber: #BA7517;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --bg2: #252525;
+      --bg3: #303030;
+      --text: #f0f0f0;
+      --text2: #999999;
+      --border: rgba(255,255,255,0.12);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); max-width: 480px; margin: 0 auto; padding-bottom: 80px; min-height: 100vh; }
+  
+  /* Header */
+  .header { padding: 52px 20px 16px; background: var(--bg); border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  /* Bottom nav */
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--bg); border-top: 0.5px solid var(--border); display: flex; z-index: 20; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-btn { flex: 1; padding: 12px 0 10px; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text2); font-size: 10px; font-weight: 500; }
+  .nav-btn.active { color: var(--blue); }
+  .nav-icon { font-size: 20px; }
+
+  /* Sections */
+  .section { display: none; padding: 16px 20px; }
+  .section.active { display: block; }
+
+  /* Type buttons */
+  .type-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .type-btn { padding: 10px 4px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); background: var(--bg2); color: var(--text2); border-radius: var(--radius-sm); cursor: pointer; text-align: center; transition: all .15s; }
+  .type-btn.active-income { background: #EAF3DE; color: #3B6D11; border-color: #639922; }
+  .type-btn.active-expense { background: #FAECE7; color: #993C1D; border-color: #D85A30; }
+  .type-btn.active-transfer { background: #E6F1FB; color: #185FA5; border-color: #378ADD; }
+
+  /* Form */
+  .form-card { background: var(--bg2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+  .field input, .field select { width: 100%; padding: 11px 12px; font-size: 15px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); appearance: none; -webkit-appearance: none; }
+  .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Save button */
+  .save-btn { width: 100%; padding: 15px; font-size: 16px; font-weight: 600; background: var(--blue); color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 4px; }
+  .save-btn:active { opacity: .85; transform: scale(0.99); }
+
+  /* Toast */
+  .toast { position: fixed; top: 100px; left: 50%; transform: translateX(-50%) translateY(-20px); background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .3s; pointer-events: none; z-index: 100; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Transaction list */
+  .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-left { display: flex; align-items: center; gap: 10px; }
+  .tx-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .tx-dot.income { background: var(--green); }
+  .tx-dot.expense { background: var(--red); }
+  .tx-dot.transfer { background: var(--blue); }
+  .tx-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .tx-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .tx-amt { font-size: 14px; font-weight: 600; }
+  .tx-amt.income { color: var(--green); }
+  .tx-amt.expense { color: var(--red); }
+  .tx-amt.transfer { color: var(--blue); }
+  .empty { text-align: center; padding: 40px 0; color: var(--text2); font-size: 14px; }
+
+  /* Dashboard */
+  .net-section { margin-bottom: 20px; }
+  .net-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); margin-bottom: 8px; }
+  .net-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .net-card { background: var(--bg2); border-radius: var(--radius-sm); padding: 10px; }
+  .net-card-label { font-size: 10px; color: var(--text2); margin-bottom: 3px; }
+  .net-card-value { font-size: 14px; font-weight: 600; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .stat-card { background: var(--bg2); border-radius: var(--radius-sm); padding: 12px; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .stat-value { font-size: 16px; font-weight: 600; }
+
+  /* Category bars */
+  .section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+  .cat-row { margin-bottom: 10px; }
+  .cat-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 3px; }
+  .cat-track { height: 5px; background: var(--bg3); border-radius: 3px; }
+  .cat-fill { height: 100%; border-radius: 3px; background: var(--red); }
+
+  /* Accounts */
+  .acct-group { margin-bottom: 20px; }
+  .acct-group-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .gdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .acct-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
+  .acct-item:last-child { border-bottom: none; }
+  .acct-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .acct-type { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .acct-right { text-align: right; }
+  .acct-bal { font-size: 14px; font-weight: 600; }
+  .acct-cur { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+  /* Settings */
+  .settings-card { background: var(--bg2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .settings-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .settings-card p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
+  .url-input { width: 100%; padding: 10px 12px; font-size: 13px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: monospace; }
+  .settings-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 500; background: var(--bg3); color: var(--text); border: none; border-radius: var(--radius-sm); cursor: pointer; margin-top: 8px; }
+  .settings-btn.primary { background: var(--blue); color: white; }
+  .status-msg { font-size: 12px; margin-top: 8px; }
+  .status-msg.ok { color: var(--green); }
+  .status-msg.err { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Mis Finanzas</h1>
+  <p id="header-date"></p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- REGISTRAR -->
+<div id="sec-log" class="section active">
+  <div class="type-row">
+    <button class="type-btn active-income" onclick="setType('income',this)">+ Ingreso</button>
+    <button class="type-btn" onclick="setType('expense',this)">− Gasto</button>
+    <button class="type-btn" onclick="setType('transfer',this)">⇄ Mover</button>
+  </div>
+  <div class="form-card">
+    <div class="row2">
+      <div class="field">
+        <label>Monto</label>
+        <input type="number" id="amount" placeholder="0.00" inputmode="decimal" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Moneda</label>
+        <select id="currency">
+          <option value="MXN">MXN</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label id="acct-label">Cuenta</label>
+      <select id="account"></select>
+    </div>
+    <div class="field" id="to-wrap" style="display:none">
+      <label>Cuenta destino</label>
+      <select id="to-account"></select>
+    </div>
+    <div class="field" id="cat-wrap">
+      <label>Categoría</label>
+      <select id="category">
+        <option>Comida y restaurantes</option>
+        <option>Supermercado</option>
+        <option>Transporte</option>
+        <option>Gasolina</option>
+        <option>Vivienda / Renta</option>
+        <option>Servicios (luz, agua, internet)</option>
+        <option>Salud</option>
+        <option>Entretenimiento</option>
+        <option>Ropa y compras</option>
+        <option>Suscripciones</option>
+        <option>Viajes</option>
+        <option>Educación</option>
+        <option>Salario</option>
+        <option>Freelance</option>
+        <option>Rendimiento Nu</option>
+        <option>Rendimiento Revolut</option>
+        <option>Retiro inversión</option>
+        <option>Otro</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="txdate">
+      </div>
+      <div class="field">
+        <label>Notas</label>
+        <input type="text" id="notes" placeholder="opcional">
+      </div>
+    </div>
+  </div>
+  <button class="save-btn" onclick="addTx()">Guardar transacción</button>
+
+  <div style="margin-top:20px">
+    <div class="section-title">Recientes</div>
+    <div id="recent-list"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="sec-dash" class="section">
+  <div class="net-section">
+    <div class="net-label">Patrimonio neto — MXN</div>
+    <div class="net-grid">
+      <div class="net-card"><div class="net-card-label">Activos</div><div class="net-card-value" style="color:var(--green)" id="d-act-mxn">$0</div></div>
+      <div class="net-card"><div class="net-card-label">Pasivos</div><div class="net-card-value" style="color:var(--red)" id="d-pas-mxn">$0</div></div>
+      <div class="net-card" style="border:1px solid var(--border)"><div class="net-card-label">Neto</div><div class="net-card-value" id="d-net-mxn">$0</div></div>
+    </div>
+  </div>
+  <div class="net-section">
+    <div class="net-label">Patrimonio neto — USD</div>
+    <div class="net-grid">
+      <div class="net-card"><div class="net-card-label">Activos</div><div class="net-card-value" style="color:var(--green)" id="d-act-usd">$0</div></div>
+      <div class="net-card"><div class="net-card-label">Pasivos</div><div class="net-card-value" style="color:var(--red)" id="d-pas-usd">$0</div></div>
+      <div class="net-card" style="border:1px solid var(--border)"><div class="net-card-label">Neto</div><div class="net-card-value" id="d-net-usd">$0</div></div>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Ingresos MXN</div><div class="stat-value" style="color:var(--green)" id="d-inc-mxn">$0</div></div>
+    <div class="stat-card"><div class="stat-label">Gastos MXN</div><div class="stat-value" style="color:var(--red)" id="d-exp-mxn">$0</div></div>
+    <div class="stat-card"><div class="stat-label">Ingresos USD</div><div class="stat-value" style="color:var(--green)" id="d-inc-usd">$0</div></div>
+    <div class="stat-card"><div class="stat-label">Gastos USD</div><div class="stat-value" style="color:var(--red)" id="d-exp-usd">$0</div></div>
+  </div>
+  <div class="section-title">Gastos por categoría (MXN)</div>
+  <div id="cat-bars"></div>
+</div>
+
+<!-- CUENTAS -->
+<div id="sec-accts" class="section">
+  <div id="acct-display"></div>
+</div>
+
+<!-- AJUSTES -->
+<div id="sec-settings" class="section">
+  <div class="settings-card">
+    <h3>Conectar con Google Sheets</h3>
+    <p>Pega aquí la URL de tu Web App de Apps Script para que cada transacción se guarde automáticamente en tu Sheet.</p>
+    <input class="url-input" id="webapp-url" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    <button class="settings-btn primary" onclick="saveUrl()">Guardar URL</button>
+    <div id="url-status" class="status-msg"></div>
+  </div>
+  <div class="settings-card">
+    <h3>Datos locales</h3>
+    <p>Tus transacciones también se guardan en este dispositivo como respaldo.</p>
+    <div id="local-count" style="font-size:13px;color:var(--text2);margin-bottom:8px"></div>
+    <button class="settings-btn" onclick="exportData()">Exportar JSON</button>
+  </div>
+  <div class="settings-card">
+    <h3>Cómo instalar como app</h3>
+    <p><strong>iPhone / iPad:</strong> Toca el botón de compartir (cuadro con flecha) en Safari → "Agregar a pantalla de inicio".</p>
+    <p><strong>Android:</strong> Toca el menú (tres puntos) en Chrome → "Agregar a pantalla de inicio" o "Instalar app".</p>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('log')" id="nav-log">
+    <span class="nav-icon">＋</span>Registrar
+  </button>
+  <button class="nav-btn" onclick="switchTab('dash')" id="nav-dash">
+    <span class="nav-icon">◎</span>Dashboard
+  </button>
+  <button class="nav-btn" onclick="switchTab('accts')" id="nav-accts">
+    <span class="nav-icon">▤</span>Cuentas
+  </button>
+  <button class="nav-btn" onclick="switchTab('settings')" id="nav-settings">
+    <span class="nav-icon">⚙</span>Ajustes
+  </button>
+</nav>
+
+<script>
+const ACCOUNTS = [
+  {name:'BBVA Chequera',    type:'banco',    currency:'MXN', group:'chequeras'},
+  {name:'BBVA Apartados',   type:'banco',    currency:'MXN', group:'chequeras'},
+  {name:'Nu Chequera',      type:'banco',    currency:'MXN', group:'chequeras'},
+  {name:'Revolut Chequera', type:'banco',    currency:'USD', group:'chequeras'},
+  {name:'Nu SmartCash',     type:'hibrida',  currency:'MXN', group:'smartcash'},
+  {name:'Revolut SmartCash',type:'hibrida',  currency:'USD', group:'smartcash'},
+  {name:'Nu Crédito',       type:'credito',  currency:'MXN', group:'credito'},
+  {name:'BBVA Crédito',     type:'credito',  currency:'MXN', group:'credito'},
+  {name:'GBM',              type:'inversion',currency:'MXN', group:'inversiones'},
+  {name:'Interactive Brokers',type:'inversion',currency:'USD',group:'inversiones'},
+];
+const GROUPS = {
+  chequeras:  {label:'Chequeras',            color:'#378ADD'},
+  smartcash:  {label:'SmartCash / Ahorro',   color:'#534AB7'},
+  credito:    {label:'Tarjetas de crédito',  color:'#D85A30'},
+  inversiones:{label:'Inversiones',          color:'#639922'},
+};
+const PASIVO_TYPES = ['credito'];
+const CATS = ['Comida y restaurantes','Supermercado','Transporte','Gasolina','Vivienda / Renta','Servicios (luz, agua, internet)','Salud','Entretenimiento','Ropa y compras','Suscripciones','Viajes','Educación','Salario','Freelance','Rendimiento Nu','Rendimiento Revolut','Retiro inversión','Otro'];
+
+let txType = 'income';
+let txs = [];
+try { txs = JSON.parse(localStorage.getItem('fin_txs_v2') || '[]'); } catch(e) {}
+
+// Init
+document.getElementById('txdate').value = new Date().toISOString().split('T')[0];
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+const savedUrl = localStorage.getItem('fin_webapp_url');
+if (savedUrl) {
+  document.getElementById('webapp-url').value = savedUrl;
+  document.getElementById('url-status').textContent = 'URL guardada';
+  document.getElementById('url-status').className = 'status-msg ok';
+}
+updateLocalCount();
+populateSelects();
+renderRecent();
+
+function populateSelects() {
+  ['account','to-account'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = ACCOUNTS.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+  });
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+t).classList.add('active');
+  document.getElementById('nav-'+t).classList.add('active');
+  if (t === 'dash') renderDash();
+  if (t === 'accts') renderAccounts();
+}
+
+function setType(t, el) {
+  txType = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.className = 'type-btn');
+  el.className = 'type-btn active-' + t;
+  document.getElementById('to-wrap').style.display = t === 'transfer' ? 'block' : 'none';
+  document.getElementById('cat-wrap').style.display = t === 'transfer' ? 'none' : 'block';
+  document.getElementById('acct-label').textContent = t === 'transfer' ? 'Cuenta origen' : 'Cuenta';
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function addTx() {
+  const amt = parseFloat(document.getElementById('amount').value);
+  if (!amt || amt <= 0) { showToast('Ingresa un monto válido'); return; }
+  const tx = {
+    id: Date.now(),
+    type: txType,
+    amount: amt,
+    currency: document.getElementById('currency').value,
+    account: document.getElementById('account').value,
+    toAccount: txType === 'transfer' ? document.getElementById('to-account').value : null,
+    category: txType !== 'transfer' ? document.getElementById('category').value : null,
+    date: document.getElementById('txdate').value,
+    notes: document.getElementById('notes').value,
+  };
+  txs.unshift(tx);
+  try { localStorage.setItem('fin_txs_v2', JSON.stringify(txs.slice(0,1000))); } catch(e) {}
+  document.getElementById('amount').value = '';
+  document.getElementById('notes').value = '';
+  updateLocalCount();
+  renderRecent();
+  sendToSheet(tx);
+  showToast('Transacción guardada');
+}
+
+function sendToSheet(tx) {
+  const url = localStorage.getItem('fin_webapp_url');
+  if (!url) return;
+  fetch(url, { method: 'POST', body: JSON.stringify(tx) }).catch(() => {});
+}
+
+function fmtMXN(n) { return '$' + Math.abs(n).toLocaleString('es-MX', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmtUSD(n) { return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmt(n, cur) { return (cur==='USD'?fmtUSD(n):fmtMXN(n))+' '+cur; }
+
+function renderRecent() {
+  const el = document.getElementById('recent-list');
+  if (!txs.length) { el.innerHTML = '<div class="empty">Sin transacciones aún.<br>Registra la primera arriba.</div>'; return; }
+  el.innerHTML = txs.slice(0,8).map(tx => `
+    <div class="tx-item">
+      <div class="tx-left">
+        <div class="tx-dot ${tx.type}"></div>
+        <div>
+          <div class="tx-title">${tx.category || 'Transferencia'}${tx.notes ? ' — ' + tx.notes : ''}</div>
+          <div class="tx-sub">${tx.account}${tx.toAccount ? ' → ' + tx.toAccount : ''} · ${tx.date}</div>
+        </div>
+      </div>
+      <div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount, tx.currency)}</div>
+    </div>`).join('');
+}
+
+function calcBalances() {
+  const bal = {};
+  ACCOUNTS.forEach(a => bal[a.name] = 0);
+  txs.forEach(tx => {
+    if (tx.type === 'income' && bal[tx.account] !== undefined) bal[tx.account] += tx.amount;
+    if (tx.type === 'expense' && bal[tx.account] !== undefined) bal[tx.account] -= tx.amount;
+    if (tx.type === 'transfer') {
+      if (bal[tx.account] !== undefined) bal[tx.account] -= tx.amount;
+      if (tx.toAccount && bal[tx.toAccount] !== undefined) bal[tx.toAccount] += tx.amount;
+    }
+  });
+  return bal;
+}
+
+function renderDash() {
+  const bal = calcBalances();
+  let aMXN=0, pMXN=0, aUSD=0, pUSD=0;
+  ACCOUNTS.forEach(a => {
+    const b = bal[a.name] || 0;
+    const isPasivo = PASIVO_TYPES.includes(a.type);
+    if (a.currency === 'MXN') { isPasivo ? pMXN += Math.abs(Math.min(b, 0)) : aMXN += b; }
+    else { isPasivo ? pUSD += Math.abs(Math.min(b, 0)) : aUSD += b; }
+  });
+  document.getElementById('d-act-mxn').textContent = fmtMXN(aMXN);
+  document.getElementById('d-pas-mxn').textContent = fmtMXN(pMXN);
+  const nMXN = aMXN - pMXN;
+  const nMXNel = document.getElementById('d-net-mxn');
+  nMXNel.textContent = (nMXN < 0 ? '-' : '') + fmtMXN(nMXN);
+  nMXNel.style.color = nMXN >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('d-act-usd').textContent = fmtUSD(aUSD);
+  document.getElementById('d-pas-usd').textContent = fmtUSD(pUSD);
+  const nUSD = aUSD - pUSD;
+  const nUSDel = document.getElementById('d-net-usd');
+  nUSDel.textContent = (nUSD < 0 ? '-' : '') + fmtUSD(nUSD);
+  nUSDel.style.color = nUSD >= 0 ? 'var(--green)' : 'var(--red)';
+  const incMXN = txs.filter(t=>t.type==='income'&&t.currency==='MXN').reduce((s,t)=>s+t.amount,0);
+  const expMXN = txs.filter(t=>t.type==='expense'&&t.currency==='MXN').reduce((s,t)=>s+t.amount,0);
+  const incUSD = txs.filter(t=>t.type==='income'&&t.currency==='USD').reduce((s,t)=>s+t.amount,0);
+  const expUSD = txs.filter(t=>t.type==='expense'&&t.currency==='USD').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('d-inc-mxn').textContent = fmtMXN(incMXN);
+  document.getElementById('d-exp-mxn').textContent = fmtMXN(expMXN);
+  document.getElementById('d-inc-usd').textContent = fmtUSD(incUSD);
+  document.getElementById('d-exp-usd').textContent = fmtUSD(expUSD);
+  const cats = {};
+  txs.filter(t=>t.type==='expense'&&t.currency==='MXN').forEach(t=>{ cats[t.category]=(cats[t.category]||0)+t.amount; });
+  const maxC = Math.max(...Object.values(cats), 1);
+  const catEl = document.getElementById('cat-bars');
+  if (!Object.keys(cats).length) { catEl.innerHTML = '<p style="font-size:13px;color:var(--text2)">Sin gastos aún.</p>'; return; }
+  catEl.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v]) => `
+    <div class="cat-row">
+      <div class="cat-meta"><span>${k}</span><span>${fmtMXN(v)}</span></div>
+      <div class="cat-track"><div class="cat-fill" style="width:${(v/maxC*100).toFixed(1)}%"></div></div>
+    </div>`).join('');
+}
+
+function renderAccounts() {
+  const bal = calcBalances();
+  const el = document.getElementById('acct-display');
+  el.innerHTML = ['chequeras','smartcash','credito','inversiones'].map(gk => {
+    const g = GROUPS[gk];
+    const accts = ACCOUNTS.filter(a => a.group === gk);
+    return `<div class="acct-group">
+      <div class="acct-group-title"><div class="gdot" style="background:${g.color}"></div>${g.label}</div>
+      ${accts.map(a => {
+        const b = bal[a.name] || 0;
+        const isCredit = a.type === 'credito';
+        const color = isCredit ? (b < 0 ? 'var(--red)' : 'var(--green)') : (b >= 0 ? 'var(--green)' : 'var(--red)');
+        const display = (isCredit && b < 0 ? '-' : '') + (a.currency==='USD'?fmtUSD(b):fmtMXN(b));
+        return `<div class="acct-item">
+          <div>
+            <div class="acct-name">${a.name}</div>
+            <div class="acct-type">${a.type === 'hibrida' ? 'SmartCash' : a.type.charAt(0).toUpperCase()+a.type.slice(1)}</div>
+          </div>
+          <div class="acct-right">
+            <div class="acct-bal" style="color:${color}">${display}</div>
+            <div class="acct-cur">${a.currency}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function saveUrl() {
+  const url = document.getElementById('webapp-url').value.trim();
+  const st = document.getElementById('url-status');
+  if (!url.includes('script.google.com')) {
+    st.textContent = 'URL inválida — debe ser de script.google.com';
+    st.className = 'status-msg err';
+    return;
+  }
+  localStorage.setItem('fin_webapp_url', url);
+  st.textContent = 'URL guardada correctamente';
+  st.className = 'status-msg ok';
+  showToast('Conectado a Google Sheets');
+}
+
+function updateLocalCount() {
+  const el = document.getElementById('local-count');
+  if (el) el.textContent = txs.length + ' transacciones guardadas localmente';
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(txs, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'finanzas_backup.json';
+  a.click(); URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
