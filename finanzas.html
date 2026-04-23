@@ -6,40 +6,42 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
-<meta name="theme-color" content="#10b981">
+<meta name="theme-color" content="#f59e0b">
 <title>Finanzas</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
 :root {
-  --accent: #10b981;
-  --accent2: #059669;
-  --income: #10b981;
+  --accent: #f59e0b;
+  --accent2: #d97706;
+  --income: #f59e0b;
   --expense: #ef4444;
   --transfer: #3b82f6;
-  --bg: #f0fdf8;
+  --bg: #fffbeb;
   --card: #ffffff;
-  --text: #0f1f17;
+  --text: #1c1407;
   --text2: #6b7280;
-  --border: rgba(16,185,129,0.14);
+  --border: rgba(245,158,11,0.14);
   --radius: 16px;
   --radius-sm: 12px;
-  --shadow: 0 2px 12px rgba(16,185,129,0.08);
+  --shadow: 0 2px 12px rgba(245,158,11,0.08);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0a1612;
-    --card: #111f1a;
-    --text: #ecfdf5;
-    --text2: #6b7280;
-    --border: rgba(16,185,129,0.18);
-    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    --bg: #1c1206;
+    --card: #27190a;
+    --text: #fef3c7;
+    --text2: #9ca3af;
+    --border: rgba(245,158,11,0.18);
+    --shadow: 0 2px 12px rgba(0,0,0,0.4);
   }
+  .budget-cat-card { background: #2d1f06 !important; border-color: rgba(245,158,11,0.35) !important; }
+  .budget-cat-card.over { background: #2d0a0a !important; border-color: rgba(239,68,68,0.4) !important; }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); max-width: 480px; margin: 0 auto; padding-bottom: 88px; min-height: 100vh; }
 
 /* Header */
-.header { padding: 52px 20px 18px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+.header { padding: 52px 20px 18px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
 .header-top { display: flex; justify-content: space-between; align-items: center; }
 .header h1 { font-size: 22px; font-weight: 700; color: white; }
 .header-date { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; text-transform: capitalize; }
@@ -47,7 +49,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .header-sync:active { opacity: .7; }
 
 /* Bottom nav */
-.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--card); border-top: 1px solid var(--border); display: flex; z-index: 20; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(16,185,129,0.07); }
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--card); border-top: 1px solid var(--border); display: flex; z-index: 20; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(245,158,11,0.07); }
 .nav-btn { flex: 1; padding: 10px 0 8px; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text2); font-size: 10px; font-weight: 600; transition: color .15s; }
 .nav-btn.active { color: var(--accent); }
 .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.8; }
@@ -64,7 +66,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .type-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .type-btn { padding: 10px 4px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: var(--card); color: var(--text2); border-radius: var(--radius-sm); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: all .15s; box-shadow: var(--shadow); }
 .type-btn svg { width: 18px; height: 18px; stroke-width: 2; }
-.type-btn.active-income { background: #dcfce7; color: #166534; border-color: #10b981; }
+.type-btn.active-income { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
 .type-btn.active-expense { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
 .type-btn.active-transfer { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
 
@@ -76,9 +78,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .field label svg { width: 13px; height: 13px; stroke-width: 2; }
 .field input, .field select { width: 100%; padding: 12px 14px; font-size: 15px; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); appearance: none; -webkit-appearance: none; font-weight: 500; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
-.field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2310b981' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+.field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f59e0b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.save-btn { width: 100%; padding: 15px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: var(--radius); cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.35); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.save-btn { width: 100%; padding: 15px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: var(--radius); cursor: pointer; box-shadow: 0 4px 15px rgba(245,158,11,0.35); display: flex; align-items: center; justify-content: center; gap: 8px; }
 .save-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
 .save-btn:active { opacity: .88; transform: scale(0.99); }
 
@@ -91,7 +93,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .tx-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .tx-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .tx-icon svg { width: 18px; height: 18px; stroke-width: 2; }
-.tx-icon.income { background: #dcfce7; color: #166534; }
+.tx-icon.income { background: #fef3c7; color: #92400e; }
 .tx-icon.expense { background: #fee2e2; color: #991b1b; }
 .tx-icon.transfer { background: #dbeafe; color: #1e40af; }
 .tx-info { min-width: 0; }
@@ -99,7 +101,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .tx-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
 .tx-right { text-align: right; flex-shrink: 0; margin-left: 8px; }
 .tx-amt { font-size: 15px; font-weight: 700; }
-.tx-amt.income { color: var(--income); }
+.tx-amt.income { color: var(--accent); }
 .tx-amt.expense { color: var(--expense); }
 .tx-amt.transfer { color: var(--transfer); }
 .tx-date { font-size: 11px; color: var(--text2); margin-top: 2px; }
@@ -107,7 +109,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .empty svg { width: 40px; height: 40px; stroke-width: 1.2; margin-bottom: 10px; opacity: .35; display: block; margin-left: auto; margin-right: auto; }
 
 /* Dashboard */
-.hero-card { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; color: white; }
+.hero-card { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; color: white; }
 .hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .8; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
 .hero-label svg { width: 12px; height: 12px; stroke-width: 2; }
 .hero-value { font-size: 34px; font-weight: 800; letter-spacing: -.5px; }
@@ -130,10 +132,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .cat-meta { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; font-weight: 500; }
 .cat-meta span:last-child { color: var(--text2); }
 .cat-track { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-.cat-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #10b981, #059669); }
+.cat-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #f59e0b, #d97706); }
 
 /* Accounts */
-.net-banner { background: linear-gradient(135deg, #059669, #047857); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.net-banner { background: linear-gradient(135deg, #d97706, #b45309); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .net-item-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,0.8); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
 .net-item-label svg { width: 11px; height: 11px; stroke-width: 2; }
 .net-item-val { font-size: 20px; font-weight: 800; color: white; }
@@ -163,10 +165,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .url-input { width: 100%; padding: 11px 12px; font-size: 12px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); font-family: monospace; }
 .settings-btn { width: 100%; padding: 13px; font-size: 14px; font-weight: 700; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .settings-btn svg { width: 16px; height: 16px; stroke-width: 2; }
-.settings-btn.primary { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+.settings-btn.primary { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
 .status-msg { font-size: 12px; margin-top: 8px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
 .status-msg svg { width: 13px; height: 13px; stroke-width: 2.5; }
-.status-msg.ok { color: var(--income); }
+.status-msg.ok { color: var(--accent); }
 .status-msg.err { color: var(--expense); }
 
 /* Budget */
@@ -178,9 +180,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .budget-hero-mini-label { font-size: 10px; font-weight: 600; opacity: .8; text-transform: uppercase; letter-spacing: .04em; }
 .budget-hero-mini-val { font-size: 16px; font-weight: 700; margin-top: 3px; }
 .budget-card { background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 12px; }
-.budget-cat-card { background: var(--card); border-radius: var(--radius); padding: 18px 18px 14px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 12px; }
-.budget-cat-card.over { border-color: #ef4444; border-width: 1.5px; }
-.budget-cat-card.warning { border-color: #f59e0b; border-width: 1.5px; }
+.budget-cat-card { background: #fffbeb; border-radius: var(--radius); padding: 18px 18px 14px; box-shadow: 0 2px 12px rgba(245,158,11,0.12); border: 1.5px solid #fde68a; margin-bottom: 12px; }
+.budget-cat-card.over { background: #fff1f2; border-color: #ef4444; box-shadow: 0 2px 12px rgba(239,68,68,0.12); }
+.budget-cat-card.warning { background: #fffbeb; border-color: #f59e0b; box-shadow: 0 2px 12px rgba(245,158,11,0.18); }
 .budget-cat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .budget-cat-title { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
 .budget-cat-title svg { width: 15px; height: 15px; stroke-width: 2; color: var(--text2); flex-shrink: 0; }
@@ -194,12 +196,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .budget-limit { font-size: 13px; color: var(--text2); font-weight: 500; }
 .budget-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
 .budget-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
-.budget-fill.ok { background: linear-gradient(90deg, #10b981, #059669); }
+.budget-fill.ok { background: linear-gradient(90deg, #f59e0b, #d97706); }
 .budget-fill.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
 .budget-fill.over { background: linear-gradient(90deg, #ef4444, #dc2626); }
 .budget-footer { display: flex; justify-content: space-between; align-items: center; }
 .budget-pct { font-size: 12px; font-weight: 700; }
-.budget-pct.ok { color: var(--income); }
+.budget-pct.ok { color: var(--accent); }
 .budget-pct.warning { color: #f59e0b; }
 .budget-pct.over { color: var(--expense); }
 .budget-left { font-size: 12px; color: var(--text2); font-weight: 500; }
@@ -231,7 +233,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .popup-rate-field input:focus { outline: none; border-color: var(--accent); }
 .popup-preview { background: var(--bg); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 8px; min-height: 44px; }
 .popup-preview svg { width: 16px; height: 16px; stroke-width: 2; color: var(--accent); flex-shrink: 0; }
-.popup-btn { width: 100%; padding: 16px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: var(--radius); cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.popup-btn { width: 100%; padding: 16px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: var(--radius); cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
 .popup-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
 .popup-cancel { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; background: none; border: none; color: var(--text2); cursor: pointer; margin-top: 6px; }
 </style>
@@ -413,11 +415,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-icon-wrap" style="background:#dcfce7">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      <div class="stat-icon-wrap" style="background:#fef3c7">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
       </div>
       <div class="stat-label">Ingresos MXN</div>
-      <div class="stat-value" style="color:var(--income)" id="d-inc-mxn">$0</div>
+      <div class="stat-value" style="color:var(--accent)" id="d-inc-mxn">$0</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon-wrap" style="background:#fee2e2">
@@ -427,8 +429,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="stat-value" style="color:var(--expense)" id="d-exp-mxn">$0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon-wrap" style="background:#dcfce7">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div class="stat-icon-wrap" style="background:#fef3c7">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
       <div class="stat-label">Neto USD</div>
       <div class="stat-value" style="color:var(--transfer)" id="d-net-usd">$0</div>
@@ -905,7 +907,7 @@ function renderAccounts(){
     const g=GROUPS[gk],accts=ACCOUNTS.filter(a=>a.group===gk);
     return `<div class="acct-group"><span class="acct-group-pill" style="background:${g.bg};color:${g.tc}">${g.icon}${g.label}</span><div class="acct-card">${accts.map(a=>{
       const b=bal[a.name]||0,isC=a.type==='credito';
-      const color=isC?(b<0?'var(--expense)':'var(--income)'):(b>=0?'var(--income)':'var(--expense)');
+      const color=isC?(b<0?'var(--expense)':'var(--accent)'):(b>=0?'var(--accent)':'var(--expense)');
       const display=(isC&&b<0?'-':'')+(a.currency==='USD'?fmtUSD(b):fmtMXN(b));
       return `<div class="acct-item"><div class="acct-left"><div class="acct-avatar" style="background:${a.bg};color:${a.color}">${a.icon}</div><div><div class="acct-name">${a.name}</div><div class="acct-type-label">${a.type==='hibrida'?'SmartCash':a.type.charAt(0).toUpperCase()+a.type.slice(1)}</div></div></div><div class="acct-right"><div class="acct-bal" style="color:${color}">${display}</div><div class="acct-cur">${a.currency}</div></div></div>`;
     }).join('')}</div></div>`;
@@ -1154,7 +1156,7 @@ function renderBudget() {
             </div>
             <div class="budget-track" style="height:5px"><div class="budget-fill ${subStatus}" style="width:${subPct.toFixed(1)}%"></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:4px">
-              <span style="font-size:11px;font-weight:700;color:${subOver?'var(--expense)':subWarning?'#f59e0b':'var(--income)'}">${Math.round(subRawPct)}%</span>
+              <span style="font-size:11px;font-weight:700;color:${subOver?'var(--expense)':subWarning?'#f59e0b':'var(--accent)'}">${Math.round(subRawPct)}%</span>
               <span style="font-size:11px;color:var(--text2)">${subOver?'⚠ Excedido '+fmtMXN(subUsed-subLimit):'Disponible '+fmtMXN(subLimit-subUsed)}</span>
             </div>
           </div>`;
@@ -1218,11 +1220,11 @@ function renderBudget() {
   }
   savingsSection.innerHTML = `
     <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">
-      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
       Ahorro e inversión
     </div>
     ${savingsRows}
-    ${totalSaved > 0 ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2);font-weight:600">Total ahorrado/invertido</span><span style="font-weight:700;color:#10b981">${fmtMXN(totalSaved)} MXN</span></div>` : ''}
+    ${totalSaved > 0 ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2);font-weight:600">Total ahorrado/invertido</span><span style="font-weight:700;color:#f59e0b">${fmtMXN(totalSaved)} MXN</span></div>` : ''}
   `;
 
   document.getElementById('b-gastado').textContent = fmtMXN(totalSpent) + ' MXN';
