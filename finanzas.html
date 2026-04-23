@@ -168,9 +168,108 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .status-msg svg { width: 13px; height: 13px; stroke-width: 2.5; }
 .status-msg.ok { color: var(--income); }
 .status-msg.err { color: var(--expense); }
+
+/* Budget */
+.budget-hero { background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; color: white; }
+.budget-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .85; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+.budget-hero-label svg { width: 12px; height: 12px; stroke-width: 2; }
+.budget-hero-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+.budget-hero-mini { background: rgba(255,255,255,0.18); border-radius: 10px; padding: 10px 12px; }
+.budget-hero-mini-label { font-size: 10px; font-weight: 600; opacity: .8; text-transform: uppercase; letter-spacing: .04em; }
+.budget-hero-mini-val { font-size: 16px; font-weight: 700; margin-top: 3px; }
+.budget-card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 10px; }
+.budget-row { margin-bottom: 14px; }
+.budget-row:last-child { margin-bottom: 0; }
+.budget-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.budget-cat-name { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.budget-cat-name svg { width: 14px; height: 14px; stroke-width: 2; color: var(--text2); }
+.budget-amounts { font-size: 12px; color: var(--text2); font-weight: 500; }
+.budget-amounts span { font-weight: 700; }
+.budget-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.budget-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+.budget-fill.ok { background: linear-gradient(90deg, #10b981, #059669); }
+.budget-fill.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.budget-fill.over { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.budget-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+.budget-pct { font-size: 11px; font-weight: 700; }
+.budget-pct.ok { color: var(--income); }
+.budget-pct.warning { color: #f59e0b; }
+.budget-pct.over { color: var(--expense); }
+.budget-left { font-size: 11px; color: var(--text2); }
+.budget-alert { display: flex; align-items: center; gap: 6px; background: #fef3c7; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: #92400e; font-weight: 600; }
+.budget-alert svg { width: 14px; height: 14px; stroke-width: 2; flex-shrink: 0; }
+.month-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.month-btn { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer; color: var(--text); display: flex; align-items: center; gap: 4px; box-shadow: var(--shadow); }
+.month-btn svg { width: 14px; height: 14px; stroke-width: 2; }
+.month-label { font-size: 15px; font-weight: 700; color: var(--text); }
+
+/* FX Popup */
+.popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; align-items: flex-end; justify-content: center; }
+.popup-overlay.show { display: flex; }
+.popup-sheet { background: var(--card); border-radius: 24px 24px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; animation: slideUp .25s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.popup-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.popup-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.popup-title svg { width: 20px; height: 20px; stroke-width: 2; color: var(--accent); }
+.popup-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+.popup-sub strong { color: var(--text); }
+.popup-fx-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: end; margin-bottom: 16px; }
+.popup-field label { display: block; font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+.popup-field input { width: 100%; padding: 13px 14px; font-size: 18px; font-weight: 700; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); text-align: center; }
+.popup-field input:focus { outline: none; border-color: var(--accent); }
+.popup-arrow { font-size: 20px; color: var(--text2); padding-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+.popup-rate-field { margin-bottom: 16px; }
+.popup-rate-field label { display: block; font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+.popup-rate-field input { width: 100%; padding: 13px 14px; font-size: 18px; font-weight: 700; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); }
+.popup-rate-field input:focus { outline: none; border-color: var(--accent); }
+.popup-preview { background: var(--bg); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.popup-preview svg { width: 16px; height: 16px; stroke-width: 2; color: var(--accent); flex-shrink: 0; }
+.popup-btn { width: 100%; padding: 16px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: var(--radius); cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.popup-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
+.popup-cancel { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; background: none; border: none; color: var(--text2); cursor: pointer; margin-top: 6px; }
 </style>
 </head>
 <body>
+
+<!-- FX POPUP -->
+<div class="popup-overlay" id="fx-popup" onclick="closeFxPopup(event)">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      Transferencia de divisas
+    </div>
+    <p class="popup-sub">Estás moviendo <strong id="fx-from-label">MXN → USD</strong>. Ingresa el tipo de cambio para calcular el monto en la cuenta destino.</p>
+
+    <div class="popup-fx-row">
+      <div class="popup-field">
+        <label id="fx-from-cur">MXN</label>
+        <input type="number" id="fx-mxn-amt" placeholder="0" readonly style="opacity:.7">
+      </div>
+      <div class="popup-arrow">→</div>
+      <div class="popup-field">
+        <label id="fx-to-cur">USD</label>
+        <input type="number" id="fx-usd-amt" placeholder="0.00" inputmode="decimal" step="0.01" oninput="updateFxPreview()">
+      </div>
+    </div>
+
+    <div class="popup-rate-field">
+      <label>Tipo de cambio (1 USD = ? MXN)</label>
+      <input type="number" id="fx-rate" placeholder="ej. 17.50" inputmode="decimal" step="0.01" oninput="updateFxFromRate()">
+    </div>
+
+    <div class="popup-preview" id="fx-preview">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Ingresa el tipo de cambio o el monto en USD
+    </div>
+
+    <button class="popup-btn" onclick="confirmFxTransfer()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar transferencia
+    </button>
+    <button class="popup-cancel" onclick="closeFxPopup()">Cancelar</button>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-top">
@@ -239,7 +338,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         Categoría
       </label>
-      <select id="category"></select>
+      <select id="category" onchange="onCategoryChange()"></select>
+    </div>
+    <div class="field" id="subcat-wrap" style="display:none">
+      <label>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 3 12 9 6"/><path d="M21 12H3"/></svg>
+        Subcategoría
+      </label>
+      <select id="subcategory"></select>
     </div>
     <div class="row2">
       <div class="field">
@@ -367,6 +473,38 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div id="acct-display"></div>
 </div>
 
+<!-- BUDGET -->
+<div id="sec-budget" class="section">
+  <div class="month-selector">
+    <button class="month-btn" onclick="changeMonth(-1)">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="month-label" id="budget-month-label">Abril 2025</div>
+    <button class="month-btn" onclick="changeMonth(1)">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <div class="budget-hero">
+    <div class="budget-hero-label">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Resumen del mes
+    </div>
+    <div style="font-size:32px;font-weight:800;letter-spacing:-1px" id="b-gastado">$0</div>
+    <div style="font-size:12px;opacity:.75;margin-top:3px" id="b-total-sub">de $0 presupuestado</div>
+    <div class="budget-hero-row">
+      <div class="budget-hero-mini"><div class="budget-hero-mini-label">Presupuesto</div><div class="budget-hero-mini-val" id="b-total">$0</div></div>
+      <div class="budget-hero-mini"><div class="budget-hero-mini-label">Gastado</div><div class="budget-hero-mini-val" id="b-usado">$0</div></div>
+      <div class="budget-hero-mini"><div class="budget-hero-mini-label">Disponible</div><div class="budget-hero-mini-val" id="b-libre">$0</div></div>
+    </div>
+  </div>
+
+  <div id="budget-alerts"></div>
+  <div class="budget-card" id="budget-list">
+    <p style="font-size:13px;color:var(--text2)">Cargando budget desde Sheets...</p>
+  </div>
+</div>
+
 <!-- AJUSTES -->
 <div id="sec-settings" class="section">
   <div class="settings-section-label">
@@ -446,6 +584,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     <span>Dashboard</span><div class="nav-dot"></div>
   </button>
+  <button class="nav-btn" onclick="switchTab('budget')" id="nav-budget">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <span>Budget</span><div class="nav-dot"></div>
+  </button>
   <button class="nav-btn" onclick="switchTab('accts')" id="nav-accts">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
     <span>Cuentas</span><div class="nav-dot"></div>
@@ -464,11 +606,11 @@ const ACCOUNTS=[
    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>'},
   {name:'Nu Chequera',      type:'banco',    currency:'MXN',group:'chequeras', color:'#7B1FA2',bg:'#F3E5F5',
    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>'},
-  {name:'Revolut Chequera', type:'banco',    currency:'MXN',group:'chequeras', color:'#0D47A1',bg:'#E8EAF6',
+  {name:'Revolut Chequera', type:'banco',    currency:'USD',group:'chequeras', color:'#0D47A1',bg:'#E8EAF6',
    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'},
   {name:'Nu SmartCash',     type:'hibrida',  currency:'MXN',group:'smartcash', color:'#6A1B9A',bg:'#F3E5F5',
    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
-  {name:'Revolut SmartCash',type:'hibrida',  currency:'MXN',group:'smartcash', color:'#283593',bg:'#E8EAF6',
+  {name:'Revolut SmartCash',type:'hibrida',  currency:'USD',group:'smartcash', color:'#283593',bg:'#E8EAF6',
    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
   {name:'Nu Crédito',       type:'credito',  currency:'MXN',group:'credito',   color:'#B71C1C',bg:'#FFEBEE',
    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'},
@@ -502,18 +644,73 @@ try{initialBalances=JSON.parse(localStorage.getItem('fin_init_bal')||'{}');}catc
 try{categories=JSON.parse(localStorage.getItem('fin_cats')||'[]');}catch(e){}
 
 const DEFAULT_CATS=[
-  {Name:'Comida y restaurantes',Type:'expense'},{Name:'Supermercado',Type:'expense'},
-  {Name:'Transporte',Type:'expense'},{Name:'Gasolina',Type:'expense'},
-  {Name:'Vivienda / Renta',Type:'expense'},{Name:'Servicios (luz, agua, internet)',Type:'expense'},
-  {Name:'Salud',Type:'expense'},{Name:'Entretenimiento',Type:'expense'},
-  {Name:'Ropa y compras',Type:'expense'},{Name:'Suscripciones',Type:'expense'},
-  {Name:'Viajes',Type:'expense'},{Name:'Educación',Type:'expense'},
-  {Name:'Salario',Type:'income'},{Name:'Freelance',Type:'income'},
-  {Name:'Rendimiento Nu',Type:'income'},{Name:'Rendimiento Revolut',Type:'income'},
-  {Name:'Retiro inversión',Type:'income'},{Name:'Otro',Type:'both'}
+  {Category:'Comida y restaurantes',Subcategory:'',Type:'expense'},
+  {Category:'Supermercado',Subcategory:'',Type:'expense'},
+  {Category:'Transporte',Subcategory:'',Type:'expense'},
+  {Category:'Gasolina',Subcategory:'',Type:'expense'},
+  {Category:'Vivienda / Renta',Subcategory:'',Type:'expense'},
+  {Category:'Servicios',Subcategory:'',Type:'expense'},
+  {Category:'Salud',Subcategory:'',Type:'expense'},
+  {Category:'Entretenimiento',Subcategory:'',Type:'expense'},
+  {Category:'Suscripciones',Subcategory:'',Type:'expense'},
+  {Category:'Ropa y compras',Subcategory:'',Type:'expense'},
+  {Category:'Viajes',Subcategory:'',Type:'expense'},
+  {Category:'Educación',Subcategory:'',Type:'expense'},
+  {Category:'Salario',Subcategory:'',Type:'income'},
+  {Category:'Freelance',Subcategory:'',Type:'income'},
+  {Category:'Rendimiento Nu',Subcategory:'',Type:'income'},
+  {Category:'Rendimiento Revolut',Subcategory:'',Type:'income'},
+  {Category:'Retiro inversión',Subcategory:'',Type:'income'},
+  {Category:'Otro',Subcategory:'',Type:'both'},
 ];
-function getCatsForType(t){const s=categories.length?categories:DEFAULT_CATS;return s.filter(c=>c.Type===t||c.Type==='both');}
-function populateCategories(){document.getElementById('category').innerHTML=getCatsForType(txType==='transfer'?'both':txType).map(c=>`<option value="${c.Name}">${c.Name}</option>`).join('');}
+
+function getSrc(){ return categories.length ? categories : DEFAULT_CATS; }
+
+// Get unique top-level categories for a given type
+function getTopCats(type) {
+  const src = getSrc();
+  const seen = new Set();
+  return src
+    .filter(c => c.Type === type || c.Type === 'both')
+    .filter(c => { const k = c.Category||c.Name||''; if(seen.has(k)) return false; seen.add(k); return true; })
+    .map(c => c.Category || c.Name || '');
+}
+
+// Get subcategories for a given category and type
+function getSubcats(cat, type) {
+  const src = getSrc();
+  return src
+    .filter(c => (c.Category||c.Name||'') === cat && (c.Type === type || c.Type === 'both'))
+    .map(c => (c.Subcategory||'').toString().trim())
+    .filter(s => s && s.toLowerCase() !== '');
+}
+
+function populateCategories() {
+  const type = txType === 'transfer' ? 'both' : txType;
+  const cats = getTopCats(type);
+  // Also include categories that have 'both' or match type
+  const allCats = categories.length
+    ? [...new Set(getSrc().filter(c=>c.Type===type||c.Type==='both').map(c=>c.Category||c.Name||''))]
+    : getTopCats(type);
+  document.getElementById('category').innerHTML = allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  onCategoryChange();
+}
+
+function onCategoryChange() {
+  const cat = document.getElementById('category').value;
+  const type = txType === 'transfer' ? 'both' : txType;
+  const subs = getSubcats(cat, type);
+  const wrap = document.getElementById('subcat-wrap');
+  const sel = document.getElementById('subcategory');
+  if (subs.length > 0) {
+    sel.innerHTML = subs.map(s=>`<option value="${s}">${s}</option>`).join('');
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+    sel.innerHTML = '';
+  }
+}
+
 function populateSelects(){['account','to-account'].forEach(id=>{document.getElementById(id).innerHTML=ACCOUNTS.map(a=>`<option value="${a.name}">${a.name}</option>`).join('');});}
 
 document.getElementById('txdate').value=new Date().toISOString().split('T')[0];
@@ -527,7 +724,7 @@ function switchTab(t){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('sec-'+t).classList.add('active');
   document.getElementById('nav-'+t).classList.add('active');
-  if(t==='dash')renderDash();if(t==='accts')renderAccounts();
+  if(t==='dash')renderDash();if(t==='accts')renderAccounts();if(t==='budget')renderBudget();
 }
 function setType(t,el){
   txType=t;
@@ -535,6 +732,7 @@ function setType(t,el){
   el.className='type-btn active-'+t;
   document.getElementById('to-wrap').style.display=t==='transfer'?'block':'none';
   document.getElementById('cat-wrap').style.display=t==='transfer'?'none':'block';
+  document.getElementById('subcat-wrap').style.display='none';
   document.getElementById('acct-label').textContent=t==='transfer'?'Cuenta origen':'Cuenta';
   populateCategories();
 }
@@ -542,7 +740,92 @@ function showToast(msg){const el=document.getElementById('toast');el.innerHTML=m
 function addTx(){
   const amt=parseFloat(document.getElementById('amount').value);
   if(!amt||amt<=0){showToast('Ingresa un monto válido');return;}
-  const tx={id:Date.now(),type:txType,amount:amt,currency:document.getElementById('currency').value,account:document.getElementById('account').value,toAccount:txType==='transfer'?document.getElementById('to-account').value:null,category:txType!=='transfer'?document.getElementById('category').value:null,date:document.getElementById('txdate').value,notes:document.getElementById('notes').value};
+
+  // Detect cross-currency transfer
+  if(txType==='transfer'){
+    const fromAcct=ACCOUNTS.find(a=>a.name===document.getElementById('account').value);
+    const toAcct=ACCOUNTS.find(a=>a.name===document.getElementById('to-account').value);
+    if(fromAcct&&toAcct&&fromAcct.currency!==toAcct.currency){
+      showFxPopup(amt, fromAcct, toAcct);
+      return;
+    }
+  }
+  saveTx(amt, null, null, null);
+}
+
+function showFxPopup(amt, fromAcct, toAcct) {
+  const isMxnToUsd = fromAcct.currency==='MXN';
+  document.getElementById('fx-from-label').textContent = fromAcct.currency+' → '+toAcct.currency;
+  document.getElementById('fx-from-cur').textContent = fromAcct.currency;
+  document.getElementById('fx-to-cur').textContent = toAcct.currency;
+  document.getElementById('fx-mxn-amt').value = amt;
+  document.getElementById('fx-mxn-amt').placeholder = amt;
+  document.getElementById('fx-rate').value = '';
+  document.getElementById('fx-usd-amt').value = '';
+  document.getElementById('fx-preview').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Ingresa el tipo de cambio o el monto en '+toAcct.currency;
+  document.getElementById('fx-popup').classList.add('show');
+  // Store context
+  document.getElementById('fx-popup').dataset.amt = amt;
+  document.getElementById('fx-popup').dataset.fromCur = fromAcct.currency;
+  document.getElementById('fx-popup').dataset.toCur = toAcct.currency;
+}
+
+function updateFxFromRate() {
+  const rate = parseFloat(document.getElementById('fx-rate').value);
+  const amt = parseFloat(document.getElementById('fx-popup').dataset.amt);
+  const fromCur = document.getElementById('fx-popup').dataset.fromCur;
+  if(!rate||!amt) return;
+  let usdAmt;
+  if(fromCur==='MXN') { usdAmt = amt / rate; }
+  else { usdAmt = amt * rate; }
+  document.getElementById('fx-usd-amt').value = usdAmt.toFixed(2);
+  updateFxPreview();
+}
+
+function updateFxPreview() {
+  const fromAmt = parseFloat(document.getElementById('fx-mxn-amt').value);
+  const toAmt = parseFloat(document.getElementById('fx-usd-amt').value);
+  const rate = parseFloat(document.getElementById('fx-rate').value);
+  const fromCur = document.getElementById('fx-popup').dataset.fromCur;
+  const toCur = document.getElementById('fx-popup').dataset.toCur;
+  if(!fromAmt||!toAmt){ return; }
+  const impliedRate = fromCur==='MXN' ? (fromAmt/toAmt) : (toAmt/fromAmt);
+  const rateDisplay = `1 USD = ${impliedRate.toFixed(2)} MXN`;
+  document.getElementById('fx-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <strong>${fromAmt.toLocaleString('es-MX')} ${fromCur}</strong> → <strong>${parseFloat(toAmt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ${toCur}</strong> &nbsp;·&nbsp; ${rateDisplay}`;
+  if(!document.getElementById('fx-rate').value) document.getElementById('fx-rate').value = impliedRate.toFixed(2);
+}
+
+function confirmFxTransfer() {
+  const fromAmt = parseFloat(document.getElementById('fx-mxn-amt').value);
+  const toAmt = parseFloat(document.getElementById('fx-usd-amt').value);
+  const rate = parseFloat(document.getElementById('fx-rate').value);
+  if(!toAmt||toAmt<=0){showToast('Ingresa el monto en '+document.getElementById('fx-popup').dataset.toCur);return;}
+  closeFxPopup();
+  saveTx(fromAmt, toAmt, rate, null);
+}
+
+function closeFxPopup(e) {
+  if(e && e.target !== document.getElementById('fx-popup')) return;
+  document.getElementById('fx-popup').classList.remove('show');
+}
+
+function saveTx(amt, toAmt, fxRate, category) {
+  const account = document.getElementById('account').value;
+  const toAccount = txType==='transfer' ? document.getElementById('to-account').value : null;
+  const isFxTransfer = toAmt !== null;
+  const cat = txType!=='transfer' ? document.getElementById('category').value : null;
+  const subcatEl = document.getElementById('subcategory');
+  const subcat = (txType!=='transfer' && subcatEl && document.getElementById('subcat-wrap').style.display!=='none')
+    ? subcatEl.value : null;
+
+  const tx = {
+    id: Date.now(), type: txType, amount: amt,
+    currency: document.getElementById('currency').value,
+    account, toAccount, category: cat, subcategory: subcat,
+    date: document.getElementById('txdate').value,
+    notes: document.getElementById('notes').value,
+    ...(isFxTransfer && { toAmount: toAmt, fxRate })
+  };
   txs.unshift(tx);
   try{localStorage.setItem('fin_txs_v2',JSON.stringify(txs.slice(0,1000)));}catch(e){}
   document.getElementById('amount').value='';document.getElementById('notes').value='';
@@ -557,14 +840,23 @@ function fmt(n,cur){return(cur==='USD'?fmtUSD(n):fmtMXN(n))+' '+cur;}
 function renderRecent(){
   const el=document.getElementById('recent-list');
   if(!txs.length){el.innerHTML=`<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Sin transacciones aún.<br>Registra la primera arriba.</div>`;return;}
-  el.innerHTML=txs.slice(0,8).map(tx=>`<div class="tx-item"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${tx.category||'Transferencia'}${tx.notes?' — '+tx.notes:''}</div><div class="tx-sub">${tx.account}${tx.toAccount?' → '+tx.toAccount:''} · ${tx.date}</div></div></div><div class="tx-right"><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div></div></div>`).join('');
+  el.innerHTML=txs.slice(0,8).map(tx=>{
+    const label = tx.subcategory ? `${tx.category} › ${tx.subcategory}` : (tx.category||'Transferencia');
+    return `<div class="tx-item"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${label}${tx.notes?' — '+tx.notes:''}</div><div class="tx-sub">${tx.account}${tx.toAccount?' → '+tx.toAccount:''} · ${tx.date}</div></div></div><div class="tx-right"><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div></div></div>`;
+  }).join('');
 }
 function calcBalances(){
   const bal={};ACCOUNTS.forEach(a=>bal[a.name]=initialBalances[a.name]||0);
   txs.forEach(tx=>{
     if(tx.type==='income'&&bal[tx.account]!==undefined)bal[tx.account]+=tx.amount;
     if(tx.type==='expense'&&bal[tx.account]!==undefined)bal[tx.account]-=tx.amount;
-    if(tx.type==='transfer'){if(bal[tx.account]!==undefined)bal[tx.account]-=tx.amount;if(tx.toAccount&&bal[tx.toAccount]!==undefined)bal[tx.toAccount]+=tx.amount;}
+    if(tx.type==='transfer'){
+      if(bal[tx.account]!==undefined)bal[tx.account]-=tx.amount;
+      if(tx.toAccount&&bal[tx.toAccount]!==undefined){
+        // FX transfer: use toAmount for destination account
+        bal[tx.toAccount]+=(tx.toAmount!==undefined ? tx.toAmount : tx.amount);
+      }
+    }
   });return bal;
 }
 function renderDash(){
@@ -621,9 +913,20 @@ async function syncFromSheet(){
   try{
     const res=await fetch(url,{method:'GET'}),json=await res.json();
     if(json.accounts&&Array.isArray(json.accounts)){const ib={};json.accounts.forEach(a=>{if(a.Name)ib[a.Name]=parseFloat(a.InitialBalance)||0;});initialBalances=ib;try{localStorage.setItem('fin_init_bal',JSON.stringify(ib));}catch(e){}}
-    if(json.categories&&Array.isArray(json.categories)&&json.categories.length>0){categories=json.categories;try{localStorage.setItem('fin_cats',JSON.stringify(categories));}catch(e){}populateCategories();}
+    if(json.categories&&Array.isArray(json.categories)&&json.categories.length>0){
+      categories=json.categories;
+      try{localStorage.setItem('fin_cats',JSON.stringify(categories));}catch(e){}
+      populateCategories();
+    }
+    if(json.budgets&&Array.isArray(json.budgets)&&json.budgets.length>0){budgets=json.budgets;try{localStorage.setItem('fin_budgets',JSON.stringify(budgets));}catch(e){}}
     if(json.status==='ok'&&Array.isArray(json.transactions)&&json.transactions.length>0){
-      txs=json.transactions.map((t,i)=>({id:t.Date+'_'+i,type:t.Type,amount:parseFloat(t.Amount)||0,currency:t.Currency,account:t.Account,toAccount:t.ToAccount||null,category:t.Category||null,date:t.Date,notes:t.Notes||''})).filter(t=>t.type&&t.amount>0);
+      txs=json.transactions.map((t,i)=>({
+        id:t.Date+'_'+i, type:t.Type, amount:parseFloat(t.Amount)||0, currency:t.Currency,
+        account:t.Account, toAccount:t.ToAccount||null,
+        category:t.Category||null, subcategory:t.Subcategory||null,
+        date:t.Date, notes:t.Notes||'',
+        ...(t.ToAmount?{toAmount:parseFloat(t.ToAmount),fxRate:parseFloat(t.FxRate)||null}:{})
+      })).filter(t=>t.type&&t.amount>0);
       try{localStorage.setItem('fin_txs_v2',JSON.stringify(txs));}catch(e){}
       updateLocalCount();renderRecent();
       if(st){st.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> '+txs.length+' transacciones sincronizadas';st.className='status-msg ok';}
@@ -633,6 +936,275 @@ async function syncFromSheet(){
 }
 function updateLocalCount(){const el=document.getElementById('local-count');if(el)el.textContent=txs.length+' transacciones guardadas localmente';}
 function exportData(){const blob=new Blob([JSON.stringify(txs,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='finanzas_backup.json';a.click();URL.revokeObjectURL(url);}
+
+// BUDGET
+let budgets = [];
+let budgetMonth = new Date();
+try { budgets = JSON.parse(localStorage.getItem('fin_budgets') || '[]'); } catch(e) {}
+
+function changeMonth(dir) {
+  budgetMonth = new Date(budgetMonth.getFullYear(), budgetMonth.getMonth() + dir, 1);
+  renderBudget();
+}
+
+function toggleBudgetCat(id) {
+  const detail = document.getElementById(id);
+  const chev = document.getElementById('chev_' + id);
+  if (!detail) return;
+  const isOpen = detail.style.display !== 'none';
+  detail.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+// Returns how many times a weekly event occurs in a given month/year
+// everyNWeeks: 1 = every week, 2 = every 2 weeks, etc.
+function countOccurrences(year, month, everyNWeeks) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  let count = 0;
+  // Count every Monday (or any day — we count 7-day intervals across the month)
+  // Simple approach: count weeks that start within the month
+  const totalDays = lastDay.getDate();
+  const totalWeeks = Math.ceil(totalDays / 7);
+  // More precise: count exact occurrences of each weekday
+  // Use 4-or-5-week logic: if month has 29+ days, some weekdays appear 5 times
+  // Simplest accurate method: iterate all 7 weekdays, see how many fall in month
+  let occurrences = 0;
+  for (let d = 1; d <= totalDays; d++) {
+    const date = new Date(year, month, d);
+    // Count Mondays as representative (any fixed weekday gives same average)
+    if (date.getDay() === 1) occurrences++;
+  }
+  // occurrences = number of Mondays = number of weeks that have a Monday
+  // For everyNWeeks, divide and round
+  return Math.ceil(occurrences / everyNWeeks);
+}
+
+function calcBudgetLimit(b, year, month) {
+  const freq = (b.FrequencyType || b.frequencytype || 'monthly').toString().toLowerCase().trim();
+  const amt = parseFloat(b.Amount || b.amount || 0);
+  const freqVal = parseFloat(b.FrequencyValue || b.frequencyvalue || 1) || 1;
+
+  if (freq === 'weekly') {
+    return amt * countOccurrences(year, month, freqVal);
+  }
+  if (freq === 'yearly') {
+    return amt / 12;
+  }
+  return amt; // monthly default
+}
+
+function getNextAnnualPayment(b, currentYear, currentMonth) {
+  const freq = (b.FrequencyType || b.frequencytype || '').toString().toLowerCase().trim();
+  if (freq !== 'yearly') return null;
+  const payMonth = parseInt(b.AnnualPaymentMonth || b.annualpaymentmonth || 0);
+  if (!payMonth || payMonth < 1 || payMonth > 12) return null;
+  const payMonthIdx = payMonth - 1; // 0-indexed
+  let payYear = currentYear;
+  if (payMonthIdx < currentMonth) payYear = currentYear + 1;
+  if (payMonthIdx === currentMonth) return 'Este mes';
+  const diff = (payYear - currentYear) * 12 + (payMonthIdx - currentMonth);
+  const payDate = new Date(payYear, payMonthIdx, 1);
+  const monthName = payDate.toLocaleDateString('es-MX', {month:'long'});
+  return diff === 1 ? 'Próximo mes' : monthName.charAt(0).toUpperCase() + monthName.slice(1) + ' ' + payYear;
+}
+
+function renderBudget() {
+  const y = budgetMonth.getFullYear();
+  const m = budgetMonth.getMonth();
+  const label = budgetMonth.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
+  document.getElementById('budget-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+
+  // Filter txs for this month in MXN
+  const monthTxs = txs.filter(tx => {
+    const d = new Date(tx.date);
+    return d.getFullYear() === y && d.getMonth() === m && tx.currency === 'MXN';
+  });
+
+  // Spent per category and subcategory (expenses only)
+  const spent = {};       // spent['Entretenimiento'] = total
+  const spentSub = {};    // spentSub['Entretenimiento|Tenis'] = amount
+  monthTxs.filter(t => t.type === 'expense').forEach(tx => {
+    const cat = tx.category || '';
+    const sub = tx.subcategory || '';
+    spent[cat] = (spent[cat] || 0) + tx.amount;
+    if (sub) {
+      const key = cat + '|' + sub;
+      spentSub[key] = (spentSub[key] || 0) + tx.amount;
+    }
+  });
+
+  // Savings transfers
+  const SAVING_TYPES = ['hibrida', 'inversion'];
+  let totalSaved = 0;
+  const savedByAcct = {};
+  monthTxs.filter(t => t.type === 'transfer').forEach(tx => {
+    const toAcct = ACCOUNTS.find(a => a.name === tx.toAccount);
+    if (toAcct && SAVING_TYPES.includes(toAcct.type)) {
+      totalSaved += tx.amount;
+      savedByAcct[tx.toAccount] = (savedByAcct[tx.toAccount] || 0) + tx.amount;
+    }
+  });
+
+  let totalBudget = 0, totalSpent = 0;
+  const alerts = [];
+
+  // Group budget rows by category
+  const budgetByCat = {};
+  budgets.forEach(b => {
+    const cat = b.Category || b.category || '';
+    const sub = (b.Subcategory || b.subcategory || '').toString().trim();
+    if (!budgetByCat[cat]) budgetByCat[cat] = [];
+    budgetByCat[cat].push({...b, _cat: cat, _sub: sub});
+  });
+
+  const FREQ_ICONS = {
+    weekly: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    yearly:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    monthly: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  };
+
+  const expenseRows = !Object.keys(budgetByCat).length
+    ? '<p style="font-size:13px;color:var(--text2);line-height:1.7">Sin budgets. Agrega la pestaña <strong>Budget</strong> en tu Sheet con columnas <strong>Category, Subcategory, Amount, FrequencyType, FrequencyValue, AnnualPaymentMonth</strong>.</p>'
+    : Object.entries(budgetByCat).map(([cat, rows]) => {
+        const catLimit = rows.reduce((sum, b) => sum + calcBudgetLimit(b, y, m), 0);
+        const catUsed = spent[cat] || 0;
+        const rawPct = catLimit > 0 ? (catUsed / catLimit) * 100 : 0;
+        const pct = Math.min(rawPct, 100);
+        const over = catUsed > catLimit && catLimit > 0;
+        const warning = rawPct >= 80 && !over;
+        const statusClass = over ? 'over' : warning ? 'warning' : 'ok';
+        totalBudget += catLimit;
+        totalSpent += catUsed;
+        if (warning) alerts.push({cat, pct: Math.round(rawPct), used: catUsed, limit: catLimit});
+        if (over) alerts.push({cat, pct: Math.round(rawPct), used: catUsed, limit: catLimit, over: true});
+
+        const hasSubs = rows.length > 1 || (rows.length === 1 && rows[0]._sub && rows[0]._sub.toLowerCase() !== 'general' && rows[0]._sub !== '');
+        const catId = 'bcat_' + cat.replace(/[^a-zA-Z0-9]/g,'_');
+
+        const subRows = rows.map(b => {
+          const sub = b._sub;
+          const subLabel = sub && sub !== '' ? sub : 'General';
+          const subLimit = calcBudgetLimit(b, y, m);
+          const baseAmt = parseFloat(b.Amount || b.amount || 0);
+          const freq = (b.FrequencyType || b.frequencytype || 'monthly').toString().toLowerCase().trim();
+          const freqVal = parseFloat(b.FrequencyValue || b.frequencyvalue || 1) || 1;
+          const subKey = cat + '|' + sub;
+          const subUsed = sub ? (spentSub[subKey] || 0) : (spentSub[cat+'|General'] || 0);
+          const subRawPct = subLimit > 0 ? (subUsed / subLimit) * 100 : 0;
+          const subPct = Math.min(subRawPct, 100);
+          const subOver = subUsed > subLimit && subLimit > 0;
+          const subWarning = subRawPct >= 80 && !subOver;
+          const subStatus = subOver ? 'over' : subWarning ? 'warning' : 'ok';
+
+          let freqBadge = '';
+          if (freq === 'weekly') {
+            const occ = countOccurrences(y, m, freqVal);
+            freqBadge = `<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:2px;margin-left:4px">${FREQ_ICONS.weekly}${occ}x × ${fmtMXN(baseAmt)}</span>`;
+          } else if (freq === 'yearly') {
+            const nextPay = getNextAnnualPayment(b, y, m);
+            const isThisMonth = nextPay === 'Este mes';
+            freqBadge = `<span style="font-size:10px;background:${isThisMonth?'#fee2e2':'#fef3c7'};color:${isThisMonth?'#991b1b':'#92400e'};padding:1px 6px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:2px;margin-left:4px">${FREQ_ICONS.yearly}Anual${nextPay?' · '+nextPay:''}</span>`;
+          }
+
+          return `<div style="padding:8px 0 8px 16px;border-top:0.5px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:4px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;opacity:.4;flex-shrink:0"><polyline points="9 18 3 12 9 6"/><path d="M21 12H3"/></svg>
+                ${subLabel}${freqBadge}
+              </div>
+              <div style="font-size:12px;font-weight:600;flex-shrink:0;margin-left:8px;color:${subOver?'var(--expense)':subWarning?'#f59e0b':'var(--text2)'}">
+                ${fmtMXN(subUsed)} <span style="font-weight:400;color:var(--text2)">/ ${fmtMXN(subLimit)}</span>
+              </div>
+            </div>
+            <div class="budget-track" style="height:4px"><div class="budget-fill ${subStatus}" style="width:${subPct.toFixed(1)}%"></div></div>
+          </div>`;
+        }).join('');
+
+        return `<div class="budget-row" style="${hasSubs?'cursor:pointer':''}" onclick="${hasSubs?`toggleBudgetCat('${catId}')`:''}" id="brow_${catId}">
+          <div class="budget-row-header">
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${cat}</span>
+              ${hasSubs?`<svg id="chev_${catId}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;transition:transform .2s;opacity:.4"><polyline points="6 9 12 15 18 9"/></svg>`:''}
+            </div>
+            <div style="font-size:13px;font-weight:700;flex-shrink:0;margin-left:8px;color:${over?'var(--expense)':warning?'#f59e0b':'var(--text)'}">
+              ${fmtMXN(catUsed)} <span style="font-weight:400;color:var(--text2)">/ ${fmtMXN(catLimit)}</span>
+            </div>
+          </div>
+          <div class="budget-track" style="margin-top:8px"><div class="budget-fill ${statusClass}" style="width:${pct.toFixed(1)}%"></div></div>
+          <div class="budget-footer">
+            <div class="budget-pct ${statusClass}">${Math.round(rawPct)}%</div>
+            <div class="budget-left">${over?'⚠ Excedido '+fmtMXN(catUsed-catLimit):catLimit>0?'Disponible '+fmtMXN(catLimit-catUsed):'Sin límite'}</div>
+          </div>
+        </div>
+        ${hasSubs?`<div id="${catId}" style="display:none;background:var(--bg);border-radius:0 0 var(--radius-sm) var(--radius-sm);margin-top:-6px;margin-bottom:6px;overflow:hidden">${subRows}</div>`:''}`
+      }).join('');
+
+  // Savings rows
+  const savingsRows = Object.keys(savedByAcct).length === 0
+    ? `<div style="font-size:13px;color:var(--text2);padding:4px 0">Sin movimientos a ahorro o inversión este mes.</div>`
+    : Object.entries(savedByAcct).map(([acct, amt]) => {
+        const acctObj = ACCOUNTS.find(a => a.name === acct);
+        const isInversion = acctObj && acctObj.type === 'inversion';
+        const color = isInversion ? '#1B5E20' : '#6A1B9A';
+        return `<div class="budget-row" style="margin-bottom:10px">
+          <div class="budget-row-header">
+            <div class="budget-cat-name">
+              <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px">${isInversion?'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>':'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'}</svg>
+              <span style="color:${color}">${acct}</span>
+            </div>
+            <div style="color:${color};font-weight:700;font-size:14px">${fmtMXN(amt)}</div>
+          </div>
+          <div class="budget-track"><div style="height:100%;border-radius:3px;background:${color};width:100%"></div></div>
+          <div class="budget-footer">
+            <div style="font-size:11px;font-weight:700;color:${color}">${isInversion?'Inversión':'Ahorro'}</div>
+            <div class="budget-left">Transferido este mes</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('budget-list').innerHTML = expenseRows;
+
+  let savingsSection = document.getElementById('budget-savings-card');
+  if (!savingsSection) {
+    savingsSection = document.createElement('div');
+    savingsSection.id = 'budget-savings-card';
+    savingsSection.className = 'budget-card';
+    document.getElementById('budget-list').after(savingsSection);
+  }
+  savingsSection.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      Ahorro e inversión
+    </div>
+    ${savingsRows}
+    ${totalSaved > 0 ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2);font-weight:600">Total ahorrado/invertido</span><span style="font-weight:700;color:#10b981">${fmtMXN(totalSaved)} MXN</span></div>` : ''}
+  `;
+
+  document.getElementById('b-gastado').textContent = fmtMXN(totalSpent) + ' MXN';
+  document.getElementById('b-total-sub').textContent = 'de ' + fmtMXN(totalBudget) + ' presupuestado · ' + fmtMXN(totalSaved) + ' ahorrado';
+  document.getElementById('b-total').textContent = fmtMXN(totalBudget);
+  document.getElementById('b-usado').textContent = fmtMXN(totalSpent);
+  document.getElementById('b-libre').textContent = fmtMXN(Math.max(totalBudget - totalSpent, 0));
+
+  const alertEl = document.getElementById('budget-alerts');
+  alertEl.innerHTML = alerts.length
+    ? alerts.map(a => `<div class="budget-alert">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        ${a.over ? '¡Excediste' : 'Vas al ' + a.pct + '% en'} <strong>${a.cat}</strong> — ${fmtMXN(a.used)} de ${fmtMXN(a.limit)}
+      </div>`).join('')
+    : '';
+}
+  const label = budgetMonth.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
+  document.getElementById('budget-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+
+  // Filter expense txs for this month in MXN
+  const monthTxs = txs.filter(tx => {
+    const d = new Date(tx.date);
+    return d.getFullYear() === y && d.getMonth() === m && tx.currency === 'MXN';
+  });
+
 </script>
 </body>
 </html>
