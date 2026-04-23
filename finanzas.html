@@ -258,6 +258,12 @@
     <div id="url-status" class="status-msg"></div>
   </div>
   <div class="settings-card">
+    <h3>Sincronizar desde Sheets</h3>
+    <p>Jala todas las transacciones de tu Google Sheet hacia la app.</p>
+    <div id="sync-status" class="status-msg" style="margin-bottom:8px"></div>
+    <button class="settings-btn primary" id="sync-btn" onclick="syncFromSheet()">Sincronizar desde Sheets</button>
+  </div>
+  <div class="settings-card">
     <h3>Datos locales</h3>
     <p>Tus transacciones también se guardan en este dispositivo como respaldo.</p>
     <div id="local-count" style="font-size:13px;color:var(--text2);margin-bottom:8px"></div>
@@ -320,6 +326,7 @@ if (savedUrl) {
   document.getElementById('webapp-url').value = savedUrl;
   document.getElementById('url-status').textContent = 'URL guardada';
   document.getElementById('url-status').className = 'status-msg ok';
+  setTimeout(syncFromSheet, 1000);
 }
 updateLocalCount();
 populateSelects();
@@ -502,6 +509,45 @@ function saveUrl() {
   st.textContent = 'URL guardada correctamente';
   st.className = 'status-msg ok';
   showToast('Conectado a Google Sheets');
+  syncFromSheet();
+}
+
+async function syncFromSheet() {
+  const url = localStorage.getItem('fin_webapp_url');
+  if (!url) return;
+  const btn = document.getElementById('sync-btn');
+  const st = document.getElementById('sync-status');
+  if (btn) { btn.textContent = 'Sincronizando...'; btn.disabled = true; }
+  if (st) { st.textContent = ''; st.className = 'status-msg'; }
+  try {
+    const res = await fetch(url + '?action=get', { method: 'GET' });
+    const json = await res.json();
+    if (json.status === 'ok' && Array.isArray(json.transactions) && json.transactions.length > 0) {
+      const mapped = json.transactions.map((t, i) => ({
+        id: t.Date + '_' + i,
+        type: t.Type,
+        amount: parseFloat(t.Amount) || 0,
+        currency: t.Currency,
+        account: t.Account,
+        toAccount: t.ToAccount || null,
+        category: t.Category || null,
+        date: t.Date,
+        notes: t.Notes || ''
+      })).filter(t => t.type && t.amount > 0);
+      txs = mapped;
+      try { localStorage.setItem('fin_txs_v2', JSON.stringify(txs)); } catch(e) {}
+      updateLocalCount();
+      renderRecent();
+      if (st) { st.textContent = txs.length + ' transacciones sincronizadas'; st.className = 'status-msg ok'; }
+      showToast(txs.length + ' transacciones cargadas');
+    } else {
+      if (st) { st.textContent = 'Sheet vacío o sin transacciones aún'; st.className = 'status-msg'; }
+    }
+  } catch(err) {
+    if (st) { st.textContent = 'Error al sincronizar — revisa la URL'; st.className = 'status-msg err'; }
+  } finally {
+    if (btn) { btn.textContent = 'Sincronizar desde Sheets'; btn.disabled = false; }
+  }
 }
 
 function updateLocalCount() {
