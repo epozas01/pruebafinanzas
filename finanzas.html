@@ -177,25 +177,32 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .budget-hero-mini { background: rgba(255,255,255,0.18); border-radius: 10px; padding: 10px 12px; }
 .budget-hero-mini-label { font-size: 10px; font-weight: 600; opacity: .8; text-transform: uppercase; letter-spacing: .04em; }
 .budget-hero-mini-val { font-size: 16px; font-weight: 700; margin-top: 3px; }
-.budget-card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 10px; }
-.budget-row { margin-bottom: 14px; }
-.budget-row:last-child { margin-bottom: 0; }
-.budget-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.budget-cat-name { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
-.budget-cat-name svg { width: 14px; height: 14px; stroke-width: 2; color: var(--text2); }
-.budget-amounts { font-size: 12px; color: var(--text2); font-weight: 500; }
-.budget-amounts span { font-weight: 700; }
-.budget-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
-.budget-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+.budget-card { background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 12px; }
+.budget-cat-card { background: var(--card); border-radius: var(--radius); padding: 18px 18px 14px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 12px; }
+.budget-cat-card.over { border-color: #ef4444; border-width: 1.5px; }
+.budget-cat-card.warning { border-color: #f59e0b; border-width: 1.5px; }
+.budget-cat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.budget-cat-title { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
+.budget-cat-title svg { width: 15px; height: 15px; stroke-width: 2; color: var(--text2); flex-shrink: 0; }
+.budget-cat-expand { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2); cursor: pointer; background: var(--bg); border: none; border-radius: 6px; padding: 4px 8px; }
+.budget-cat-expand svg { width: 12px; height: 12px; stroke-width: 2.5; transition: transform .2s; }
+.budget-amounts-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.budget-spent { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+.budget-spent.ok { color: var(--text); }
+.budget-spent.warning { color: #f59e0b; }
+.budget-spent.over { color: var(--expense); }
+.budget-limit { font-size: 13px; color: var(--text2); font-weight: 500; }
+.budget-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.budget-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
 .budget-fill.ok { background: linear-gradient(90deg, #10b981, #059669); }
 .budget-fill.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
 .budget-fill.over { background: linear-gradient(90deg, #ef4444, #dc2626); }
-.budget-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
-.budget-pct { font-size: 11px; font-weight: 700; }
+.budget-footer { display: flex; justify-content: space-between; align-items: center; }
+.budget-pct { font-size: 12px; font-weight: 700; }
 .budget-pct.ok { color: var(--income); }
 .budget-pct.warning { color: #f59e0b; }
 .budget-pct.over { color: var(--expense); }
-.budget-left { font-size: 11px; color: var(--text2); }
+.budget-left { font-size: 12px; color: var(--text2); font-weight: 500; }
 .budget-alert { display: flex; align-items: center; gap: 6px; background: #fef3c7; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: #92400e; font-weight: 600; }
 .budget-alert svg { width: 14px; height: 14px; stroke-width: 2; flex-shrink: 0; }
 .month-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -500,7 +507,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 
   <div id="budget-alerts"></div>
-  <div class="budget-card" id="budget-list">
+  <div id="budget-list">
     <p style="font-size:13px;color:var(--text2)">Cargando budget desde Sheets...</p>
   </div>
 </div>
@@ -1093,6 +1100,8 @@ function renderBudget() {
     ? '<p style="font-size:13px;color:var(--text2);line-height:1.7">Sin budgets. Agrega la pestaña <strong>Budget</strong> en tu Sheet con columnas <strong>Category, Subcategory, Amount, FrequencyType, FrequencyValue, AnnualPaymentMonth</strong>.</p>'
     : Object.entries(budgetByCat).map(([cat, rows]) => {
         const catLimit = rows.reduce((sum, b) => sum + calcBudgetLimit(b, y, m), 0);
+        // Skip categories with zero budget
+        if (catLimit === 0) return '';
         const catUsed = spent[cat] || 0;
         const rawPct = catLimit > 0 ? (catUsed / catLimit) * 100 : 0;
         const pct = Math.min(rawPct, 100);
@@ -1111,6 +1120,7 @@ function renderBudget() {
           const sub = b._sub;
           const subLabel = sub && sub !== '' ? sub : 'General';
           const subLimit = calcBudgetLimit(b, y, m);
+          if (subLimit === 0) return '';
           const baseAmt = parseFloat(b.Amount || b.amount || 0);
           const freq = (b.FrequencyType || b.frequencytype || 'monthly').toString().toLowerCase().trim();
           const freqVal = parseFloat(b.FrequencyValue || b.frequencyvalue || 1) || 1;
@@ -1132,38 +1142,46 @@ function renderBudget() {
             freqBadge = `<span style="font-size:10px;background:${isThisMonth?'#fee2e2':'#fef3c7'};color:${isThisMonth?'#991b1b':'#92400e'};padding:1px 6px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:2px;margin-left:4px">${FREQ_ICONS.yearly}Anual${nextPay?' · '+nextPay:''}</span>`;
           }
 
-          return `<div style="padding:8px 0 8px 16px;border-top:0.5px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-              <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:4px">
+          return `<div style="padding:10px 0 8px;border-top:0.5px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:4px;font-weight:500">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;opacity:.4;flex-shrink:0"><polyline points="9 18 3 12 9 6"/><path d="M21 12H3"/></svg>
                 ${subLabel}${freqBadge}
               </div>
-              <div style="font-size:12px;font-weight:600;flex-shrink:0;margin-left:8px;color:${subOver?'var(--expense)':subWarning?'#f59e0b':'var(--text2)'}">
+              <div style="font-size:13px;font-weight:600;flex-shrink:0;margin-left:8px;color:${subOver?'var(--expense)':subWarning?'#f59e0b':'var(--text2)'}">
                 ${fmtMXN(subUsed)} <span style="font-weight:400;color:var(--text2)">/ ${fmtMXN(subLimit)}</span>
               </div>
             </div>
-            <div class="budget-track" style="height:4px"><div class="budget-fill ${subStatus}" style="width:${subPct.toFixed(1)}%"></div></div>
+            <div class="budget-track" style="height:5px"><div class="budget-fill ${subStatus}" style="width:${subPct.toFixed(1)}%"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:11px;font-weight:700;color:${subOver?'var(--expense)':subWarning?'#f59e0b':'var(--income)'}">${Math.round(subRawPct)}%</span>
+              <span style="font-size:11px;color:var(--text2)">${subOver?'⚠ Excedido '+fmtMXN(subUsed-subLimit):'Disponible '+fmtMXN(subLimit-subUsed)}</span>
+            </div>
           </div>`;
         }).join('');
 
-        return `<div class="budget-row" style="${hasSubs?'cursor:pointer':''}" onclick="${hasSubs?`toggleBudgetCat('${catId}')`:''}" id="brow_${catId}">
-          <div class="budget-row-header">
-            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              <span style="font-size:14px;font-weight:600;color:var(--text)">${cat}</span>
-              ${hasSubs?`<svg id="chev_${catId}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;transition:transform .2s;opacity:.4"><polyline points="6 9 12 15 18 9"/></svg>`:''}
+        return `<div class="budget-cat-card ${statusClass !== 'ok' ? statusClass : ''}">
+          <div class="budget-cat-header">
+            <div class="budget-cat-title">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              ${cat}
             </div>
-            <div style="font-size:13px;font-weight:700;flex-shrink:0;margin-left:8px;color:${over?'var(--expense)':warning?'#f59e0b':'var(--text)'}">
-              ${fmtMXN(catUsed)} <span style="font-weight:400;color:var(--text2)">/ ${fmtMXN(catLimit)}</span>
-            </div>
+            ${hasSubs ? `<button class="budget-cat-expand" onclick="toggleBudgetCat('${catId}')" id="brow_${catId}">
+              Detalle
+              <svg id="chev_${catId}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>` : ''}
           </div>
-          <div class="budget-track" style="margin-top:8px"><div class="budget-fill ${statusClass}" style="width:${pct.toFixed(1)}%"></div></div>
-          <div class="budget-footer">
+          <div class="budget-amounts-row">
+            <div class="budget-spent ${statusClass}">${fmtMXN(catUsed)}</div>
+            <div class="budget-limit">de ${fmtMXN(catLimit)}</div>
+          </div>
+          <div class="budget-track"><div class="budget-fill ${statusClass}" style="width:${pct.toFixed(1)}%"></div></div>
+          <div class="budget-footer" style="margin-top:8px">
             <div class="budget-pct ${statusClass}">${Math.round(rawPct)}%</div>
-            <div class="budget-left">${over?'⚠ Excedido '+fmtMXN(catUsed-catLimit):catLimit>0?'Disponible '+fmtMXN(catLimit-catUsed):'Sin límite'}</div>
+            <div class="budget-left">${over?'⚠ Excedido '+fmtMXN(catUsed-catLimit):catLimit>0?'Disponible '+fmtMXN(catLimit-catUsed):''}</div>
           </div>
-        </div>
-        ${hasSubs?`<div id="${catId}" style="display:none;background:var(--bg);border-radius:0 0 var(--radius-sm) var(--radius-sm);margin-top:-6px;margin-bottom:6px;overflow:hidden">${subRows}</div>`:''}`
+          ${hasSubs ? `<div id="${catId}" style="display:none;margin-top:4px">${subRows}</div>` : ''}
+        </div>`;
       }).join('');
 
   // Savings rows
