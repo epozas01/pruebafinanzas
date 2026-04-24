@@ -897,22 +897,22 @@ function drawPieChart(segments) {
   if (!canvas) return;
   const total = segments.reduce((s,seg)=>s+seg.value,0);
   if (!total) { canvas.style.display='none'; legend.innerHTML='<p style="font-size:13px;color:var(--text2)">Sin datos aún.</p>'; return; }
-  canvas.style.display='block';
 
-  // Fixed square size — no stretching
+  // Declare isDark first — used throughout
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  canvas.style.display='block';
   const size = 180;
-  canvas.width = size;
-  canvas.height = size;
-  canvas.style.width = size + 'px';
-  canvas.style.height = size + 'px';
+  canvas.width = size; canvas.height = size;
+  canvas.style.width = size+'px'; canvas.style.height = size+'px';
   canvas.style.margin = '0 auto';
-  canvas.style.display = 'block';
 
   const ctx = canvas.getContext('2d');
   const cx = size/2, cy = size/2, r = size*0.44, inner = size*0.27;
   ctx.clearRect(0,0,size,size);
 
   let angle = -Math.PI/2;
+  const sep = isDark ? '#27190a' : '#fffbeb';
   segments.forEach(seg => {
     const slice = (seg.value/total)*Math.PI*2;
     ctx.beginPath();
@@ -921,14 +921,13 @@ function drawPieChart(segments) {
     ctx.closePath();
     ctx.fillStyle = seg.color;
     ctx.fill();
-    ctx.strokeStyle = isDark ? '#27190a' : '#fffbeb';
+    ctx.strokeStyle = sep;
     ctx.lineWidth = 2;
     ctx.stroke();
     angle += slice;
   });
 
   // Donut hole
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   ctx.beginPath();
   ctx.arc(cx,cy,inner,0,Math.PI*2);
   ctx.fillStyle = isDark ? '#27190a' : '#ffffff';
@@ -986,8 +985,8 @@ function renderDash(){
   const pieBal=calcBalances();
   const pieGroups = [
     {label:'Chequeras',  key:'chequeras',  color:'#f59e0b'},
-    {label:'SmartCash',  key:'smartcash',  color:'#d97706'},
-    {label:'Inversiones',key:'inversiones',color:'#b45309'},
+    {label:'SmartCash',  key:'smartcash',  color:'#8b5cf6'},
+    {label:'Inversiones',key:'inversiones',color:'#10b981'},
   ];
   const pieSegments = pieGroups.map(g => {
     const total = ACCOUNTS
@@ -997,6 +996,8 @@ function renderDash(){
   }).filter(s=>s.value>0);
   console.log('[Pie] segments:', pieSegments);
   drawPieChart(pieSegments);
+  // Redraw after a tick to ensure canvas is visible and sized correctly
+  setTimeout(() => drawPieChart(pieSegments), 50);
 }
 function renderAccounts(){
   const bal=calcBalances();let aMXN=0,pMXN=0,aUSD=0,pUSD=0;
@@ -1354,14 +1355,6 @@ function renderBudget() {
       </div>`).join('')
     : '';
 }
-  const label = budgetMonth.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
-  document.getElementById('budget-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
-
-  // Filter expense txs for this month in MXN
-  const monthTxs = txs.filter(tx => {
-    const d = new Date(tx.date);
-    return d.getFullYear() === y && d.getMonth() === m && tx.currency === 'MXN';
-  });
 
 </script>
 </body>
