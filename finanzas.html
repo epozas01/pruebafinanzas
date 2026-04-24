@@ -457,7 +457,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
       Distribución de patrimonio
     </div>
-    <canvas id="pie-chart" style="width:100%;max-height:220px;display:block;margin:0 auto"></canvas>
+    <canvas id="pie-chart" width="180" height="180" style="width:180px;height:180px;display:block;margin:8px auto 0"></canvas>
     <div id="pie-legend" style="margin-top:14px;display:flex;flex-direction:column;gap:6px"></div>
   </div>
 
@@ -895,39 +895,62 @@ function drawPieChart(segments) {
   const total = segments.reduce((s,seg)=>s+seg.value,0);
   if (!total) { canvas.style.display='none'; legend.innerHTML='<p style="font-size:13px;color:var(--text2)">Sin datos aún.</p>'; return; }
   canvas.style.display='block';
-  const size = Math.min(canvas.parentElement.clientWidth - 32, 220);
-  canvas.width = size; canvas.height = size;
+
+  // Fixed square size — no stretching
+  const size = 180;
+  canvas.width = size;
+  canvas.height = size;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  canvas.style.margin = '0 auto';
+  canvas.style.display = 'block';
+
   const ctx = canvas.getContext('2d');
-  const cx=size/2, cy=size/2, r=size*0.42, inner=size*0.24;
+  const cx = size/2, cy = size/2, r = size*0.44, inner = size*0.27;
   ctx.clearRect(0,0,size,size);
+
   let angle = -Math.PI/2;
   segments.forEach(seg => {
     const slice = (seg.value/total)*Math.PI*2;
-    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,angle,angle+slice);
-    ctx.closePath(); ctx.fillStyle=seg.color; ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2; ctx.stroke();
-    angle+=slice;
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    ctx.strokeStyle = isDark ? '#27190a' : '#fffbeb';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    angle += slice;
   });
-  ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2);
+
+  // Donut hole
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  ctx.fillStyle = isDark ? '#27190a' : '#ffffff'; ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx,cy,inner,0,Math.PI*2);
+  ctx.fillStyle = isDark ? '#27190a' : '#ffffff';
+  ctx.fill();
+
+  // Center text
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = isDark ? '#fef3c7' : '#1c1407';
-  ctx.font = `bold ${Math.round(size*0.09)}px -apple-system,sans-serif`;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(fmtMXN(segments.reduce((s,g)=>s+g.value,0)), cx, cy-size*0.04);
-  ctx.font = `${Math.round(size*0.065)}px -apple-system,sans-serif`;
+  ctx.font = `bold 15px -apple-system,sans-serif`;
+  ctx.fillText(fmtMXN(total), cx, cy - 7);
+  ctx.font = `11px -apple-system,sans-serif`;
   ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
-  ctx.fillText('total MXN', cx, cy+size*0.055);
+  ctx.fillText('total MXN', cx, cy + 9);
+
+  // Legend
   legend.innerHTML = segments.map(seg=>`
-    <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="width:10px;height:10px;border-radius:50%;background:${seg.color};flex-shrink:0"></div>
         <span style="font-size:13px;color:var(--text)">${seg.label}</span>
       </div>
       <div>
         <span style="font-size:13px;font-weight:700;color:var(--text)">${fmtMXN(seg.value)}</span>
-        <span style="font-size:11px;color:var(--text2);margin-left:4px">${((seg.value/total)*100).toFixed(1)}%</span>
+        <span style="font-size:11px;color:var(--text2);margin-left:6px">${((seg.value/total)*100).toFixed(1)}%</span>
       </div>
     </div>`).join('');
 }
@@ -959,10 +982,10 @@ function renderDash(){
   // Build pie chart segments from account balances (MXN, positive only)
   const pieBal=calcBalances();
   const pieGroups = [
-    {label:'Chequeras',  key:'chequeras',  color:'#3b82f6'},
-    {label:'SmartCash',  key:'smartcash',  color:'#8b5cf6'},
-    {label:'Inversiones',key:'inversiones',color:'#10b981'},
-    {label:'Crédito',    key:'credito',    color:'#ef4444'},
+    {label:'Chequeras',  key:'chequeras',  color:'#f59e0b'},
+    {label:'SmartCash',  key:'smartcash',  color:'#d97706'},
+    {label:'Inversiones',key:'inversiones',color:'#b45309'},
+    {label:'Crédito',    key:'credito',    color:'#fde68a'},
   ];
   const pieSegments = pieGroups.map(g => {
     const total = ACCOUNTS.filter(a=>a.group===g.key&&a.currency==='MXN').reduce((s,a)=>s+Math.max(pieBal[a.name]||0,0),0);
