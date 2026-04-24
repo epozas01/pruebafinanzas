@@ -630,11 +630,14 @@ try { ACCOUNTS = JSON.parse(localStorage.getItem('fin_accounts') || '[]'); } cat
 function sheetTypeToAppType(t) {
   const m = {
     'banco':'banco','bank':'banco',
-    'hibrida':'hibrida','híbrida':'hibrida','hybrid':'hibrida','smartcash':'hibrida',
-    'credito':'credito','crédito':'credito','credit':'credito',
-    'inversion':'inversion','inversión':'inversion','investment':'inversion',
+    'hibrida':'hibrida','hybrid':'hibrida','smartcash':'hibrida',
+    'credito':'credito','credit':'credito',
+    'inversion':'inversion','investment':'inversion',
   };
-  return m[(t||'').toLowerCase().trim()] || 'banco';
+  // Normalize: lowercase + strip accents
+  const normalized = (t||'').toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return m[normalized] || 'banco';
 }
 
 function typeToGroup(t) {
@@ -985,12 +988,14 @@ function renderDash(){
     {label:'Chequeras',  key:'chequeras',  color:'#f59e0b'},
     {label:'SmartCash',  key:'smartcash',  color:'#d97706'},
     {label:'Inversiones',key:'inversiones',color:'#b45309'},
-    {label:'Crédito',    key:'credito',    color:'#fde68a'},
   ];
   const pieSegments = pieGroups.map(g => {
-    const total = ACCOUNTS.filter(a=>a.group===g.key&&a.currency==='MXN').reduce((s,a)=>s+Math.max(pieBal[a.name]||0,0),0);
+    const total = ACCOUNTS
+      .filter(a=>a.group===g.key&&a.currency==='MXN')
+      .reduce((s,a)=>s+Math.max(pieBal[a.name]||0,0),0);
     return {label:g.label, value: Math.round(total), color: g.color};
   }).filter(s=>s.value>0);
+  console.log('[Pie] segments:', pieSegments);
   drawPieChart(pieSegments);
 }
 function renderAccounts(){
@@ -1360,4 +1365,5 @@ function renderBudget() {
 
 </script>
 </body>
+</html>
 </html>
