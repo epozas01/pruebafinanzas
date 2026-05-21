@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="apple-mobile-web-app-title" content="Finanzas">
 <meta name="theme-color" content="#0a0a0a">
-<title>Pulse</title>
+<title>Finanzas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -55,6 +55,132 @@ body {
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ─────── PRIVACY MODE ─────── */
+body.private .hero-value,
+body.private .hero-stat-val,
+body.private .kpi-val,
+body.private .tx-amt,
+body.private .acct-bal,
+body.private .acct-group-total,
+body.private .budget-spent,
+body.private .budget-limit,
+body.private .budget-left,
+body.private .quick-chip-amt,
+body.private .summary-item-val,
+body.private .trend-badge,
+body.private #budget-savings-card,
+body.private .chart-canvas-wrap {
+  filter: blur(10px);
+  transition: filter 0.3s;
+  user-select: none;
+}
+body.private .chart-canvas-wrap { pointer-events: none; }
+
+/* ─────── COMPARISON BADGES ─────── */
+.trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 8px;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+}
+.trend-badge svg { width: 10px; height: 10px; stroke-width: 2.5; }
+.trend-badge.up { background: rgba(74,222,128,0.12); color: var(--green); }
+.trend-badge.down { background: rgba(248,113,113,0.12); color: var(--red); }
+.trend-badge.neutral { background: rgba(168,168,160,0.12); color: var(--text-mid); }
+.trend-badge.up-expense { background: rgba(248,113,113,0.12); color: var(--red); }
+.trend-badge.down-expense { background: rgba(74,222,128,0.12); color: var(--green); }
+
+/* ─────── PERIOD TOGGLE ─────── */
+.period-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+.period-btn {
+  flex: 1;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  color: var(--text-mid);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.period-btn.active {
+  background: var(--gold-soft);
+  color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* ─────── SUMMARY CARD ─────── */
+.summary-card {
+  background: linear-gradient(135deg, rgba(212,175,55,0.06), transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.summary-item-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.summary-item-val {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ─────── EDIT MODAL (reuses popup styles) ─────── */
+.edit-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.edit-action {
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.edit-action svg { width: 14px; height: 14px; }
+.edit-action.delete { color: var(--red); border-color: rgba(248,113,113,0.3); }
+.edit-action:active { transform: scale(0.98); }
+
+/* tx-item with long-press hint */
+.tx-item { position: relative; }
+.tx-item.tx-clickable { cursor: pointer; }
 
 /* ─────── HEADER ─────── */
 .header {
@@ -953,13 +1079,41 @@ body {
       <h1>Pulse</h1>
       <div class="header-sub" id="header-date"></div>
     </div>
-    <button class="header-action" onclick="syncFromSheet()" title="Sincronizar">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-    </button>
+    <div style="display:flex;gap:8px">
+      <button class="header-action" onclick="togglePrivacy()" title="Privacidad" id="privacy-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="privacy-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button class="header-action" onclick="syncFromSheet()" title="Sincronizar">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      </button>
+    </div>
   </div>
 </header>
 
 <div class="toast" id="toast"></div>
+
+<!-- EDIT POPUP -->
+<div class="popup-overlay" id="edit-popup" onclick="closeEditPopup(event)">
+  <div class="popup-sheet" onclick="event.stopPropagation()">
+    <div class="popup-handle"></div>
+    <div class="popup-title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Transacción
+    </div>
+    <p class="popup-sub" id="edit-sub">—</p>
+    <div class="edit-actions">
+      <button class="edit-action" onclick="editTransaction()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Editar
+      </button>
+      <button class="edit-action delete" onclick="deleteTransaction()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Borrar
+      </button>
+    </div>
+    <button class="popup-cancel" onclick="closeEditPopup()">Cancelar</button>
+  </div>
+</div>
 
 <!-- FX POPUP -->
 <div class="popup-overlay" id="fx-popup" onclick="closeFxPopup(event)">
@@ -1017,17 +1171,36 @@ body {
     </div>
   </div>
 
+  <div class="period-toggle" id="period-toggle">
+    <button class="period-btn" onclick="setPeriod('week')" data-period="week">Semana</button>
+    <button class="period-btn active" onclick="setPeriod('month')" data-period="month">Mes</button>
+    <button class="period-btn" onclick="setPeriod('year')" data-period="year">Año</button>
+  </div>
+
+  <div class="summary-card">
+    <div>
+      <div class="summary-item-label" id="sum-label-1">Ingresos del mes</div>
+      <div class="summary-item-val" style="color:var(--green)" id="sum-income">$0</div>
+      <div id="sum-income-trend"></div>
+    </div>
+    <div>
+      <div class="summary-item-label" id="sum-label-2">Gastos del mes</div>
+      <div class="summary-item-val" style="color:var(--red)" id="sum-expense">$0</div>
+      <div id="sum-expense-trend"></div>
+    </div>
+    <div>
+      <div class="summary-item-label" id="sum-label-3">Neto</div>
+      <div class="summary-item-val" id="sum-net">$0</div>
+      <div id="sum-net-trend"></div>
+    </div>
+    <div>
+      <div class="summary-item-label" id="sum-label-4">Ahorrado</div>
+      <div class="summary-item-val" style="color:var(--gold)" id="sum-saved">$0</div>
+      <div id="sum-saved-trend"></div>
+    </div>
+  </div>
+
   <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
-      <div class="kpi-label">Ingresos mes</div>
-      <div class="kpi-val" id="d-inc-mxn" style="color:var(--green)">$0</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
-      <div class="kpi-label">Gastos mes</div>
-      <div class="kpi-val" id="d-exp-mxn" style="color:var(--red)">$0</div>
-    </div>
     <div class="kpi-card">
       <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
       <div class="kpi-label">Activos USD</div>
@@ -1035,7 +1208,7 @@ body {
     </div>
     <div class="kpi-card">
       <div class="kpi-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
-      <div class="kpi-label">Ahorro+Inv</div>
+      <div class="kpi-label">Ahorro+Inv total</div>
       <div class="kpi-val" id="d-ahorro" style="color:var(--gold)">$0</div>
     </div>
   </div>
@@ -1277,7 +1450,7 @@ body {
 
 <script>
 // ─────── STATE ───────
-let ACCOUNTS=[], txs=[], initialBalances={}, categories=[], budgets=[], txType='income', budgetMonth=new Date();
+let ACCOUNTS=[], txs=[], initialBalances={}, categories=[], budgets=[], txType='income', budgetMonth=new Date(), dashPeriod='month';
 let chartPie=null, chartCats=null;
 const PASIVO_TYPES=['credito'];
 const TX_SVG={
@@ -1464,9 +1637,9 @@ function renderRecent(){
     renderQuickChips();
     return;
   }
-  el.innerHTML=txs.slice(0,8).map(tx=>{
+  el.innerHTML=txs.slice(0,8).map((tx,i)=>{
     const label=tx.subcategory?`${tx.category} · ${tx.subcategory}`:(tx.category||'Transferencia');
-    return `<div class="tx-item"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${label}${tx.notes?' — '+tx.notes:''}</div><div class="tx-sub">${tx.account}${tx.toAccount?' → '+tx.toAccount:''}</div></div></div><div class="tx-right"><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div><div class="tx-date">${tx.date}</div></div></div>`;
+    return `<div class="tx-item tx-clickable" onclick="openEditPopup(${i})"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${label}${tx.notes?' — '+tx.notes:''}</div><div class="tx-sub">${tx.account}${tx.toAccount?' → '+tx.toAccount:''}</div></div></div><div class="tx-right"><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div><div class="tx-date">${tx.date}</div></div></div>`;
   }).join('');
   renderQuickChips();
 }
@@ -1535,6 +1708,63 @@ function copyTx(idx){
 }
 
 // ─────── DASHBOARD CHARTS ───────
+function setPeriod(p){
+  dashPeriod=p;
+  document.querySelectorAll('.period-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.period===p);
+  });
+  renderDash();
+}
+
+function getPeriodDates(period){
+  const now=new Date();
+  let curStart, curEnd, prevStart, prevEnd, label;
+  if(period==='week'){
+    // Current week (Monday to Sunday)
+    const day=now.getDay()||7; // Sunday = 0 → 7
+    curStart=new Date(now);curStart.setDate(now.getDate()-day+1);curStart.setHours(0,0,0,0);
+    curEnd=new Date(curStart);curEnd.setDate(curStart.getDate()+6);curEnd.setHours(23,59,59,999);
+    prevStart=new Date(curStart);prevStart.setDate(curStart.getDate()-7);
+    prevEnd=new Date(curStart);prevEnd.setMilliseconds(-1);
+    label='semana';
+  } else if(period==='year'){
+    curStart=new Date(now.getFullYear(),0,1);
+    curEnd=new Date(now.getFullYear(),11,31,23,59,59);
+    prevStart=new Date(now.getFullYear()-1,0,1);
+    prevEnd=new Date(now.getFullYear()-1,11,31,23,59,59);
+    label='año';
+  } else {
+    curStart=new Date(now.getFullYear(),now.getMonth(),1);
+    curEnd=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+    prevStart=new Date(now.getFullYear(),now.getMonth()-1,1);
+    prevEnd=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);
+    label='mes';
+  }
+  return {curStart,curEnd,prevStart,prevEnd,label};
+}
+
+function filterTxsInRange(start,end){
+  return txs.filter(tx=>{
+    const d=new Date(tx.date);
+    return d>=start && d<=end && tx.currency==='MXN';
+  });
+}
+
+function trendBadge(curr, prev, isExpense=false){
+  if(!prev) return '';
+  const diff=curr-prev;
+  const pct=Math.abs(((diff)/prev)*100);
+  if(Math.abs(diff)<0.01) return `<span class="trend-badge neutral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="5" y1="12" x2="19" y2="12"/></svg> ${Math.round(pct)}%</span>`;
+  const up=diff>0;
+  // For expenses, up is bad (red), down is good (green)
+  // For income/net/savings, up is good (green), down is bad (red)
+  let cls;
+  if(isExpense){ cls=up?'up-expense':'down-expense'; }
+  else{ cls=up?'up':'down'; }
+  const arrow=up?'<polyline points="18 15 12 9 6 15"/>':'<polyline points="6 9 12 15 18 9"/>';
+  return `<span class="trend-badge ${cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${arrow}</svg> ${Math.round(pct)}% vs ${dashPeriod==='week'?'sem ant':dashPeriod==='year'?'año ant':'mes ant'}</span>`;
+}
+
 function renderDash(){
   const bal=calcBalances();
   let aMXN=0,pMXN=0,aUSD=0,pUSD=0;
@@ -1550,17 +1780,46 @@ function renderDash(){
   document.getElementById('d-net-mxn-sub').textContent='Activos '+fmtMXN(aMXN)+' − Pasivos '+fmtMXN(pMXN);
   document.getElementById('d-net-usd').textContent=fmtUSD(aUSD-pUSD);
 
-  // Month KPIs
-  const now=new Date();
-  const monthTxs=txs.filter(t=>{const d=new Date(t.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&t.currency==='MXN';});
-  const incMonth=monthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expMonth=monthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  document.getElementById('d-inc-mxn').textContent=fmtMXN(incMonth);
-  document.getElementById('d-exp-mxn').textContent=fmtMXN(expMonth);
-
   // Ahorro+Inversión
   const ahorro=ACCOUNTS.filter(a=>(a.type==='hibrida'||a.type==='inversion')&&a.currency==='MXN').reduce((s,a)=>s+Math.max(bal[a.name]||0,0),0);
   document.getElementById('d-ahorro').textContent=fmtMXN(ahorro);
+
+  // ─── Period summary ───
+  const {curStart,curEnd,prevStart,prevEnd,label}=getPeriodDates(dashPeriod);
+  const curTxs=filterTxsInRange(curStart,curEnd);
+  const prevTxs=filterTxsInRange(prevStart,prevEnd);
+
+  const sumIncome=(arr)=>arr.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const sumExpense=(arr)=>arr.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const SAVING_TYPES=['hibrida','inversion'];
+  const sumSaved=(arr)=>arr.filter(t=>t.type==='transfer').reduce((s,t)=>{
+    const a=ACCOUNTS.find(a=>a.name===t.toAccount);
+    if(a&&SAVING_TYPES.includes(a.type))return s+t.amount;
+    return s;
+  },0);
+
+  const curInc=sumIncome(curTxs), curExp=sumExpense(curTxs), curSav=sumSaved(curTxs);
+  const prevInc=sumIncome(prevTxs), prevExp=sumExpense(prevTxs), prevSav=sumSaved(prevTxs);
+  const curNet=curInc-curExp, prevNet=prevInc-prevExp;
+
+  const labelMap={week:'semana', month:'mes', year:'año'};
+  const lblTxt=labelMap[dashPeriod];
+
+  document.getElementById('sum-label-1').textContent='Ingresos · '+lblTxt;
+  document.getElementById('sum-label-2').textContent='Gastos · '+lblTxt;
+  document.getElementById('sum-label-3').textContent='Neto · '+lblTxt;
+  document.getElementById('sum-label-4').textContent='Ahorrado · '+lblTxt;
+
+  document.getElementById('sum-income').textContent=fmtMXN(curInc);
+  document.getElementById('sum-expense').textContent=fmtMXN(curExp);
+  document.getElementById('sum-net').textContent=(curNet<0?'-':'')+fmtMXN(curNet);
+  document.getElementById('sum-net').style.color=curNet>=0?'var(--green)':'var(--red)';
+  document.getElementById('sum-saved').textContent=fmtMXN(curSav);
+
+  document.getElementById('sum-income-trend').innerHTML=trendBadge(curInc,prevInc,false);
+  document.getElementById('sum-expense-trend').innerHTML=trendBadge(curExp,prevExp,true);
+  document.getElementById('sum-net-trend').innerHTML=trendBadge(curNet,prevNet,false);
+  document.getElementById('sum-saved-trend').innerHTML=trendBadge(curSav,prevSav,false);
 
   // Pie chart
   const pieData={
@@ -1570,9 +1829,9 @@ function renderDash(){
   };
   drawPie(pieData);
 
-  // Categories chart
+  // Categories chart (uses current period)
   const catSpent={};
-  monthTxs.filter(t=>t.type==='expense').forEach(t=>{
+  curTxs.filter(t=>t.type==='expense').forEach(t=>{
     const k=t.category||'Sin categoría';
     catSpent[k]=(catSpent[k]||0)+t.amount;
   });
@@ -1584,9 +1843,9 @@ function renderDash(){
   if(!txs.length){
     dr.innerHTML='<div class="empty">Sin movimientos</div>';
   }else{
-    dr.innerHTML=txs.slice(0,5).map(tx=>{
+    dr.innerHTML=txs.slice(0,5).map((tx,i)=>{
       const label=tx.subcategory?`${tx.category} · ${tx.subcategory}`:(tx.category||'Transferencia');
-      return `<div class="tx-item"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${label}</div><div class="tx-sub">${tx.account} · ${tx.date}</div></div></div><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div></div>`;
+      return `<div class="tx-item tx-clickable" onclick="openEditPopup(${i})"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${label}</div><div class="tx-sub">${tx.account} · ${tx.date}</div></div></div><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div></div>`;
     }).join('');
   }
 }
@@ -2019,6 +2278,29 @@ function updateLocalCount(){
   const el=document.getElementById('local-count');
   if(el)el.textContent=txs.length+' transacciones en caché';
 }
+
+function togglePrivacy(){
+  const isPrivate=document.body.classList.toggle('private');
+  try{localStorage.setItem('fin_private',isPrivate?'1':'0');}catch(e){}
+  const icon=document.getElementById('privacy-icon');
+  if(isPrivate){
+    // eye-off icon
+    icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  }else{
+    // eye icon
+    icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+// Restore privacy mode from localStorage on load
+if(localStorage.getItem('fin_private')==='1'){
+  document.body.classList.add('private');
+  // Set icon to eye-off
+  setTimeout(()=>{
+    const icon=document.getElementById('privacy-icon');
+    if(icon)icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  },0);
+}
 function exportData(){
   const blob=new Blob([JSON.stringify(txs,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -2030,6 +2312,71 @@ function clearLocalData(){
   txs=[];try{localStorage.removeItem('fin_txs_v2');}catch(e){}
   updateLocalCount();renderRecent();renderDash();
   showToast('Caché borrado');
+}
+
+// ─────── EDIT / DELETE TRANSACTIONS ───────
+let _editIdx=null;
+
+function openEditPopup(idx){
+  _editIdx=idx;
+  const tx=txs[idx];
+  if(!tx)return;
+  const label=tx.subcategory?`${tx.category} · ${tx.subcategory}`:(tx.category||'Transferencia');
+  const sign=tx.type==='expense'?'-':'';
+  document.getElementById('edit-sub').innerHTML=`<strong style="color:var(--gold)">${label}</strong> · ${sign}${fmt(tx.amount,tx.currency)} · <span style="color:var(--text-dim)">${tx.date} · ${tx.account}</span>`;
+  document.getElementById('edit-popup').classList.add('show');
+}
+
+function closeEditPopup(e){
+  if(e&&e.target!==document.getElementById('edit-popup'))return;
+  document.getElementById('edit-popup').classList.remove('show');
+  _editIdx=null;
+}
+
+function editTransaction(){
+  const tx=txs[_editIdx];
+  if(!tx){closeEditPopup();return;}
+  // Switch to Registrar tab
+  switchTab('log');
+  // Set type
+  txType=tx.type;
+  document.querySelectorAll('.segment-btn').forEach((b,i)=>{
+    b.className='segment-btn';
+    const types=['income','expense','transfer'];
+    if(types[i]===tx.type)b.className='segment-btn active-'+tx.type;
+  });
+  document.getElementById('to-wrap').style.display=tx.type==='transfer'?'block':'none';
+  document.getElementById('cat-wrap').style.display=tx.type==='transfer'?'none':'block';
+  document.getElementById('acct-label').textContent=tx.type==='transfer'?'Cuenta origen':'Cuenta';
+  // Fill form
+  document.getElementById('amount').value=tx.amount;
+  document.getElementById('currency').value=tx.currency||'MXN';
+  document.getElementById('account').value=tx.account||'';
+  if(tx.toAccount)document.getElementById('to-account').value=tx.toAccount;
+  populateCategories();
+  if(tx.category)document.getElementById('category').value=tx.category;
+  onCategoryChange();
+  if(tx.subcategory){
+    setTimeout(()=>{document.getElementById('subcategory').value=tx.subcategory;},10);
+  }
+  document.getElementById('txdate').value=tx.date;
+  document.getElementById('notes').value=tx.notes||'';
+  // Delete the original so when user saves, it's a "replacement"
+  txs.splice(_editIdx,1);
+  try{localStorage.setItem('fin_txs_v2',JSON.stringify(txs.slice(0,1000)));}catch(e){}
+  closeEditPopup();
+  showToast('Editando · guarda para confirmar');
+}
+
+function deleteTransaction(){
+  if(_editIdx===null||!txs[_editIdx])return;
+  const tx=txs[_editIdx];
+  if(!confirm('¿Borrar esta transacción?\nSe elimina del caché local pero NO de Google Sheets.\nDebes borrarla manualmente del Sheet también.'))return;
+  txs.splice(_editIdx,1);
+  try{localStorage.setItem('fin_txs_v2',JSON.stringify(txs));}catch(e){}
+  updateLocalCount();renderRecent();renderDash();
+  closeEditPopup();
+  showToast('Transacción borrada localmente');
 }
 </script>
 </body>
