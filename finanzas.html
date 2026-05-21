@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Finanzas">
+<meta name="apple-mobile-web-app-title" content="Pulse">
 <meta name="theme-color" content="#0a0a0a">
-<title>Finanzas</title>
+<title>Pulse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -698,6 +698,89 @@ body {
   text-transform: capitalize;
 }
 
+/* ─────── QUICK COPY ─────── */
+.quick-copy-section { margin-bottom: 20px; }
+.quick-copy-label {
+  font-size: 10px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  padding: 0 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+.quick-copy-label svg { width: 12px; height: 12px; }
+.quick-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 4px 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.quick-chips::-webkit-scrollbar { display: none; }
+.quick-chip {
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  min-width: 140px;
+  max-width: 200px;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.quick-chip:active {
+  transform: scale(0.97);
+  background: var(--bg-card-hover);
+  border-color: var(--gold);
+}
+.quick-chip-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.quick-chip-icon {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.quick-chip-icon svg { width: 12px; height: 12px; stroke-width: 2.2; }
+.quick-chip-icon.income { background: rgba(74,222,128,0.15); color: var(--green); }
+.quick-chip-icon.expense { background: rgba(248,113,113,0.15); color: var(--red); }
+.quick-chip-icon.transfer { background: rgba(96,165,250,0.15); color: var(--blue); }
+.quick-chip-cat {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quick-chip-amt {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.quick-chip-amt.income { color: var(--green); }
+.quick-chip-amt.expense { color: var(--red); }
+.quick-chip-amt.transfer { color: var(--blue); }
+.quick-chip-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ─────── SETTINGS ─────── */
 .settings-section {
   font-size: 10px;
@@ -867,7 +950,7 @@ body {
 <header class="header">
   <div class="header-top">
     <div>
-      <h1>Finanzas</h1>
+      <h1>Pulse</h1>
       <div class="header-sub" id="header-date"></div>
     </div>
     <button class="header-action" onclick="syncFromSheet()" title="Sincronizar">
@@ -986,6 +1069,14 @@ body {
 
 <!-- REGISTRAR -->
 <div id="sec-log" class="section">
+  <div class="quick-copy-section" id="quick-copy-wrap" style="display:none">
+    <div class="quick-copy-label">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      Repetir transacción
+    </div>
+    <div class="quick-chips" id="quick-chips"></div>
+  </div>
+
   <div class="segment">
     <button class="segment-btn active-income" onclick="setType('income',this)">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
@@ -1370,12 +1461,77 @@ function renderRecent(){
   const el=document.getElementById('recent-list');
   if(!txs.length){
     el.innerHTML='<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Sin transacciones aún</div>';
+    renderQuickChips();
     return;
   }
   el.innerHTML=txs.slice(0,8).map(tx=>{
     const label=tx.subcategory?`${tx.category} · ${tx.subcategory}`:(tx.category||'Transferencia');
     return `<div class="tx-item"><div class="tx-left"><div class="tx-icon ${tx.type}">${TX_SVG[tx.type]}</div><div class="tx-info"><div class="tx-title">${label}${tx.notes?' — '+tx.notes:''}</div><div class="tx-sub">${tx.account}${tx.toAccount?' → '+tx.toAccount:''}</div></div></div><div class="tx-right"><div class="tx-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div><div class="tx-date">${tx.date}</div></div></div>`;
   }).join('');
+  renderQuickChips();
+}
+
+function renderQuickChips(){
+  const wrap=document.getElementById('quick-copy-wrap');
+  const el=document.getElementById('quick-chips');
+  if(!wrap||!el)return;
+  // Get last 5 unique transactions (dedupe by category+subcategory+amount+type)
+  const seen=new Set();
+  const unique=[];
+  for(const tx of txs){
+    const key=`${tx.type}|${tx.category||''}|${tx.subcategory||''}|${tx.amount}|${tx.account}`;
+    if(seen.has(key))continue;
+    seen.add(key);
+    unique.push(tx);
+    if(unique.length>=5)break;
+  }
+  if(!unique.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  el.innerHTML=unique.map((tx,i)=>{
+    const label=tx.subcategory||tx.category||(tx.type==='transfer'?'Transferencia':'—');
+    return `<button class="quick-chip" onclick="copyTx(${i})">
+      <div class="quick-chip-top">
+        <div class="quick-chip-icon ${tx.type}">${TX_SVG[tx.type]}</div>
+        <div class="quick-chip-cat">${label}</div>
+      </div>
+      <div class="quick-chip-amt ${tx.type}">${tx.type==='expense'?'-':''}${fmt(tx.amount,tx.currency)}</div>
+      <div class="quick-chip-sub">${tx.account}${tx.toAccount?' → '+tx.toAccount:''}</div>
+    </button>`;
+  }).join('');
+  // Store the unique list for copyTx to use
+  window._quickChips=unique;
+}
+
+function copyTx(idx){
+  const tx=window._quickChips&&window._quickChips[idx];
+  if(!tx)return;
+  // Switch tx type and update segment buttons
+  txType=tx.type;
+  document.querySelectorAll('.segment-btn').forEach((b,i)=>{
+    b.className='segment-btn';
+    const types=['income','expense','transfer'];
+    if(types[i]===tx.type)b.className='segment-btn active-'+tx.type;
+  });
+  document.getElementById('to-wrap').style.display=tx.type==='transfer'?'block':'none';
+  document.getElementById('cat-wrap').style.display=tx.type==='transfer'?'none':'block';
+  document.getElementById('acct-label').textContent=tx.type==='transfer'?'Cuenta origen':'Cuenta';
+
+  // Fill form
+  document.getElementById('amount').value=tx.amount;
+  document.getElementById('currency').value=tx.currency||'MXN';
+  document.getElementById('account').value=tx.account||'';
+  if(tx.toAccount)document.getElementById('to-account').value=tx.toAccount;
+  populateCategories();
+  if(tx.category)document.getElementById('category').value=tx.category;
+  onCategoryChange();
+  if(tx.subcategory){
+    setTimeout(()=>{document.getElementById('subcategory').value=tx.subcategory;},10);
+  }
+  document.getElementById('txdate').value=new Date().toISOString().split('T')[0]; // Today's date
+  document.getElementById('notes').value='';
+  // Scroll to top so user can review
+  window.scrollTo({top:0,behavior:'smooth'});
+  showToast('Copiado · revisa y guarda');
 }
 
 // ─────── DASHBOARD CHARTS ───────
