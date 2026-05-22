@@ -55,6 +55,24 @@ body {
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ─────── PRIVACY MODE ─────── */
+body.private .hero-value,
+body.private .hero-stat-val,
+body.private .summary-item-val,
+body.private .trend-badge,
+body.private .tx-amt,
+body.private .acct-bal,
+body.private .acct-group-total,
+body.private .budget-spent,
+body.private .budget-limit,
+body.private .budget-left,
+body.private .chart-canvas-wrap {
+  filter: blur(10px);
+  transition: filter 0.3s;
+  user-select: none;
+}
+body.private .chart-canvas-wrap { pointer-events: none; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: 16px; }
 .hidden { display: none !important; }
@@ -485,6 +503,25 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 .empty .ico-xl { color: var(--text-dim); margin-bottom: 12px; opacity: 0.4; }
 
 /* ─────── ACCOUNTS ─────── */
+.acct-group { margin-bottom: 20px; }
+.acct-group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+.acct-group-name {
+  font-size: 11px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+}
+.acct-group-total {
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
 .acct-list {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -1045,6 +1082,12 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
         <div class="header-sub" id="header-date"></div>
       </div>
       <div style="display:flex;gap:8px">
+        <button class="header-action" onclick="togglePrivacy()" title="Privacy" id="privacy-btn">
+          <svg class="ico" id="privacy-icon" viewBox="0 0 24 24" stroke-width="1.8">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
         <button class="header-action" onclick="confirmSignOut()" title="Sign out">
           <svg class="ico" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
@@ -1740,6 +1783,33 @@ window.confirmSignOut = async function() {
   try { await window.FB.signOut(fbAuth); } catch(e) {}
 };
 
+window.togglePrivacy = function() {
+  const isPrivate = document.body.classList.toggle('private');
+  try { localStorage.setItem('aurum_private', isPrivate ? '1' : '0'); } catch(e) {}
+  updatePrivacyIcon(isPrivate);
+};
+
+function updatePrivacyIcon(isPrivate) {
+  const icon = document.getElementById('privacy-icon');
+  if (!icon) return;
+  if (isPrivate) {
+    // eye-off icon
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    // eye icon
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+// Restore privacy preference on load
+try {
+  if (localStorage.getItem('aurum_private') === '1') {
+    document.body.classList.add('private');
+    // delay icon update until DOM is ready
+    document.addEventListener('DOMContentLoaded', () => updatePrivacyIcon(true));
+  }
+} catch(e) {}
+
 // =====================================================================
 //                      DATA LOADING
 // =====================================================================
@@ -2286,7 +2356,14 @@ function drawCats(entries) {
         x: {
           ticks: {
             color: '#6b6b65', font: { family: 'Inter', size: 10 },
-            callback: v => '$' + (v / 1000).toFixed(0) + 'k'
+            maxTicksLimit: 5,
+            callback: v => {
+              if (v === 0) return '$0';
+              if (Math.abs(v) >= 10000) return '$' + Math.round(v / 1000) + 'k';
+              if (Math.abs(v) >= 1000) return '$' + (v / 1000).toFixed(1) + 'k';
+              if (Math.abs(v) >= 100) return '$' + Math.round(v);
+              return '$' + v;
+            }
           },
           grid: { color: 'rgba(212,175,55,0.05)' }
         },
@@ -2329,23 +2406,62 @@ function renderAccounts() {
   document.getElementById('acct-total').textContent = formatMoney(total);
   document.getElementById('acct-count-sub').textContent = data.accounts.length + ' account' + (data.accounts.length === 1 ? '' : 's');
 
-  const list = document.getElementById('acct-list');
+  const container = document.getElementById('acct-list');
+  // Remove the .acct-list styling on the wrapper since groups bring their own
+  container.classList.remove('acct-list');
+
   if (data.accounts.length === 0) {
-    list.innerHTML = '<div class="empty">No accounts yet</div>';
+    container.innerHTML = '<div class="acct-list"><div class="empty">No accounts yet</div></div>';
     return;
   }
-  list.innerHTML = data.accounts.map(a => `
-    <div class="acct-item" onclick="openAccountEditor('${a.id}', false)">
-      <div class="acct-left">
-        <div class="acct-avatar">${accountTypeIconSvg(a.type)}</div>
-        <div>
-          <div class="acct-name">${escapeHtml(a.name)}</div>
-          <div class="acct-type">${a.type}</div>
+
+  // Group by type, in a stable display order
+  const ORDER = ['checking','savings','cash','investment','credit','other'];
+  const LABELS = {
+    checking: 'Checking',
+    savings: 'Savings',
+    cash: 'Cash',
+    investment: 'Investments',
+    credit: 'Credit',
+    other: 'Other'
+  };
+  const groups = {};
+  data.accounts.forEach(a => {
+    const t = ORDER.includes(a.type) ? a.type : 'other';
+    if (!groups[t]) groups[t] = [];
+    groups[t].push(a);
+  });
+
+  let html = '';
+  ORDER.forEach(t => {
+    const accts = groups[t];
+    if (!accts || accts.length === 0) return;
+    const groupTotal = accts.reduce((s,a) => s + (a.balance || 0), 0);
+    html += `
+      <div class="acct-group">
+        <div class="acct-group-header">
+          <div class="acct-group-name">${LABELS[t]}</div>
+          <div class="acct-group-total" style="color:${groupTotal >= 0 ? 'var(--text)' : 'var(--red)'}">${formatMoney(groupTotal)}</div>
+        </div>
+        <div class="acct-list">
+          ${accts.map(a => `
+            <div class="acct-item" onclick="openAccountEditor('${a.id}', false)">
+              <div class="acct-left">
+                <div class="acct-avatar">${accountTypeIconSvg(a.type)}</div>
+                <div>
+                  <div class="acct-name">${escapeHtml(a.name)}</div>
+                  <div class="acct-type">${a.type}</div>
+                </div>
+              </div>
+              <div class="acct-bal" style="color:${(a.balance || 0) >= 0 ? 'var(--text)' : 'var(--red)'}">${formatMoney(a.balance || 0)}</div>
+            </div>
+          `).join('')}
         </div>
       </div>
-      <div class="acct-bal" style="color:${(a.balance || 0) >= 0 ? 'var(--text)' : 'var(--red)'}">${formatMoney(a.balance || 0)}</div>
-    </div>
-  `).join('');
+    `;
+  });
+
+  container.innerHTML = html;
 }
 
 function renderBudget() {
