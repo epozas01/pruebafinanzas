@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0a;
@@ -817,6 +818,92 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   scrollbar-width: none;
 }
 .scroll-x::-webkit-scrollbar { display: none; }
+
+/* ─────── PERIOD TOGGLE ─────── */
+.period-toggle {
+  display: flex; gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+.period-btn {
+  flex: 1; padding: 8px 4px;
+  background: none; border: none;
+  color: var(--text-mid);
+  font-size: 11px; font-weight: 600;
+  border-radius: 8px; transition: all 0.2s;
+  font-family: var(--sans);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.period-btn.active {
+  background: var(--gold-soft); color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* ─────── SUMMARY CARD ─────── */
+.summary-card {
+  background: linear-gradient(135deg, rgba(212,175,55,0.06), transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.summary-item-label {
+  font-size: 10px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.15em;
+  font-weight: 500; margin-bottom: 4px;
+}
+.summary-item-val {
+  font-family: var(--serif);
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ─────── TREND BADGE ─────── */
+.trend-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 8px;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+}
+.trend-badge svg { width: 10px; height: 10px; stroke-width: 2.5; stroke: currentColor; fill: none; }
+.trend-badge.up { background: rgba(74,222,128,0.12); color: var(--green); }
+.trend-badge.down { background: rgba(248,113,113,0.12); color: var(--red); }
+.trend-badge.neutral { background: rgba(168,168,160,0.12); color: var(--text-mid); }
+.trend-badge.up-expense { background: rgba(248,113,113,0.12); color: var(--red); }
+.trend-badge.down-expense { background: rgba(74,222,128,0.12); color: var(--green); }
+
+/* ─────── CHART CARD ─────── */
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.chart-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-family: var(--serif);
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.chart-sub {
+  font-size: 10px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.15em;
+  margin-top: 3px; font-weight: 500;
+}
+.chart-canvas-wrap { position: relative; height: 200px; }
+.chart-canvas-wrap.tall { height: 240px; }
 </style>
 </head>
 <body>
@@ -981,6 +1068,55 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
           <div class="hero-stat-val red" id="month-expense">$0</div>
         </div>
       </div>
+    </div>
+
+    <div class="period-toggle" id="period-toggle">
+      <button class="period-btn" onclick="setPeriod('week')" data-period="week">Week</button>
+      <button class="period-btn active" onclick="setPeriod('month')" data-period="month">Month</button>
+      <button class="period-btn" onclick="setPeriod('year')" data-period="year">Year</button>
+    </div>
+
+    <div class="summary-card">
+      <div>
+        <div class="summary-item-label" id="sum-label-1">Income · month</div>
+        <div class="summary-item-val" style="color:var(--green)" id="sum-income">$0</div>
+        <div id="sum-income-trend"></div>
+      </div>
+      <div>
+        <div class="summary-item-label" id="sum-label-2">Expense · month</div>
+        <div class="summary-item-val" style="color:var(--red)" id="sum-expense">$0</div>
+        <div id="sum-expense-trend"></div>
+      </div>
+      <div>
+        <div class="summary-item-label" id="sum-label-3">Net</div>
+        <div class="summary-item-val" id="sum-net">$0</div>
+        <div id="sum-net-trend"></div>
+      </div>
+      <div>
+        <div class="summary-item-label" id="sum-label-4">Saved</div>
+        <div class="summary-item-val" style="color:var(--gold)" id="sum-saved">$0</div>
+        <div id="sum-saved-trend"></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Balance distribution</div>
+          <div class="chart-sub">By account type</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="chart-pie"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Top expense categories</div>
+          <div class="chart-sub" id="cats-chart-sub">Current month</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap tall"><canvas id="chart-cats"></canvas></div>
     </div>
 
     <div class="section-title">
@@ -1501,14 +1637,28 @@ function boot() {
   }
 }
 
+// Hardcoded fallback config (so users don't have to enter it every time).
+// localStorage takes precedence if set, so you can still override on a per-device basis.
+const HARDCODED_CONFIG = {
+  apiKey: "AIzaSyBzO8l8DRaPiPWx-ehCLZuhPlN7CKr2554",
+  authDomain: "finance-pulse-d1d2b.firebaseapp.com",
+  projectId: "finance-pulse-d1d2b",
+  storageBucket: "finance-pulse-d1d2b.firebasestorage.app",
+  messagingSenderId: "112003056574",
+  appId: "1:112003056574:web:43544d5f0b92bb4539afef",
+  measurementId: "G-1KGQK73FT5"
+};
+
 function getStoredConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_CONFIG);
-    if (!raw) return null;
-    const cfg = JSON.parse(raw);
-    if (!cfg.apiKey || !cfg.projectId) return null;
-    return cfg;
-  } catch { return null; }
+    if (raw) {
+      const cfg = JSON.parse(raw);
+      if (cfg.apiKey && cfg.projectId) return cfg;
+    }
+  } catch {}
+  if (HARDCODED_CONFIG.apiKey && HARDCODED_CONFIG.projectId) return HARDCODED_CONFIG;
+  return null;
 }
 
 window.openConfigFromBoot = function() {
@@ -1884,15 +2034,79 @@ function renderAll() {
   }
 }
 
+// Dashboard state
+let dashPeriod = 'month';
+let chartPie = null, chartCats = null;
+
+window.setPeriod = function(p) {
+  dashPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.period === p)
+  );
+  renderHome();
+};
+
+function getPeriodDates(period) {
+  const now = new Date();
+  let curStart, curEnd, prevStart, prevEnd, label;
+  if (period === 'week') {
+    const day = now.getDay() || 7; // Sunday = 7
+    curStart = new Date(now); curStart.setDate(now.getDate() - day + 1); curStart.setHours(0,0,0,0);
+    curEnd = new Date(curStart); curEnd.setDate(curStart.getDate() + 6); curEnd.setHours(23,59,59,999);
+    prevStart = new Date(curStart); prevStart.setDate(curStart.getDate() - 7);
+    prevEnd = new Date(curStart); prevEnd.setMilliseconds(-1);
+    label = 'week';
+  } else if (period === 'year') {
+    curStart = new Date(now.getFullYear(), 0, 1);
+    curEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    prevStart = new Date(now.getFullYear() - 1, 0, 1);
+    prevEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+    label = 'year';
+  } else {
+    curStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    curEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    label = 'month';
+  }
+  return { curStart, curEnd, prevStart, prevEnd, label };
+}
+
+function filterTxsInRange(start, end) {
+  const startIso = start.toISOString().split('T')[0];
+  const endIso = end.toISOString().split('T')[0];
+  return data.transactions.filter(t => t.date >= startIso && t.date <= endIso);
+}
+
+function trendBadge(curr, prev, isExpense) {
+  if (!prev || prev === 0) return '';
+  const diff = curr - prev;
+  const pct = Math.abs((diff / prev) * 100);
+  if (Math.abs(diff) < 0.01) {
+    return '<span class="trend-badge neutral"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg> ' + Math.round(pct) + '%</span>';
+  }
+  const up = diff > 0;
+  let cls;
+  if (isExpense) cls = up ? 'up-expense' : 'down-expense';
+  else cls = up ? 'up' : 'down';
+  const arrow = up
+    ? '<polyline points="18 15 12 9 6 15"/>'
+    : '<polyline points="6 9 12 15 18 9"/>';
+  const label = dashPeriod === 'week' ? 'wk' : dashPeriod === 'year' ? 'yr' : 'mo';
+  return '<span class="trend-badge ' + cls + '"><svg viewBox="0 0 24 24">' + arrow + '</svg> ' + Math.round(pct) + '% vs prev ' + label + '</span>';
+}
+
 function renderHome() {
   document.getElementById('hello-name').textContent = data.profile?.name || 'Aurum';
   document.getElementById('header-date').textContent =
     new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 
+  // Hero card — total balance (always shown)
   const totalBalance = data.accounts.reduce((s, a) => s + (a.balance || 0), 0);
   document.getElementById('total-balance').textContent = formatMoney(totalBalance);
   document.getElementById('balance-sub').textContent = data.accounts.length + ' account' + (data.accounts.length === 1 ? '' : 's');
 
+  // Hero stats use current month (always)
   const monthStart = monthStartIso();
   const monthTxs = data.transactions.filter(t => t.date >= monthStart);
   const monthIncome = monthTxs.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
@@ -1900,6 +2114,64 @@ function renderHome() {
   document.getElementById('month-income').textContent = formatMoney(monthIncome);
   document.getElementById('month-expense').textContent = formatMoney(monthExpense);
 
+  // Period-aware summary card with trend vs previous period
+  const { curStart, curEnd, prevStart, prevEnd, label } = getPeriodDates(dashPeriod);
+  const curTxs = filterTxsInRange(curStart, curEnd);
+  const prevTxs = filterTxsInRange(prevStart, prevEnd);
+
+  const sumI = arr => arr.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
+  const sumE = arr => arr.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
+  // "Saved" = transfers TO a savings or investment account
+  const sumSaved = arr => arr.filter(t => t.type === 'transfer').reduce((s,t) => {
+    const dest = data.accounts.find(a => a.id === t.toAccountId);
+    if (dest && (dest.type === 'savings' || dest.type === 'investment')) return s + t.amount;
+    return s;
+  }, 0);
+
+  const curInc = sumI(curTxs), curExp = sumE(curTxs), curSav = sumSaved(curTxs);
+  const prevInc = sumI(prevTxs), prevExp = sumE(prevTxs), prevSav = sumSaved(prevTxs);
+  const curNet = curInc - curExp, prevNet = prevInc - prevExp;
+
+  const labelMap = { week: 'week', month: 'month', year: 'year' };
+  const lbl = labelMap[dashPeriod];
+
+  document.getElementById('sum-label-1').textContent = 'Income · ' + lbl;
+  document.getElementById('sum-label-2').textContent = 'Expense · ' + lbl;
+  document.getElementById('sum-label-3').textContent = 'Net · ' + lbl;
+  document.getElementById('sum-label-4').textContent = 'Saved · ' + lbl;
+
+  document.getElementById('sum-income').textContent = formatMoney(curInc);
+  document.getElementById('sum-expense').textContent = formatMoney(curExp);
+  document.getElementById('sum-net').textContent = formatMoney(curNet);
+  document.getElementById('sum-net').style.color = curNet >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('sum-saved').textContent = formatMoney(curSav);
+
+  document.getElementById('sum-income-trend').innerHTML = trendBadge(curInc, prevInc, false);
+  document.getElementById('sum-expense-trend').innerHTML = trendBadge(curExp, prevExp, true);
+  document.getElementById('sum-net-trend').innerHTML = trendBadge(curNet, prevNet, false);
+  document.getElementById('sum-saved-trend').innerHTML = trendBadge(curSav, prevSav, false);
+
+  // Pie chart — balance distribution by account type
+  const pieData = {};
+  data.accounts.forEach(a => {
+    const bal = Math.max(a.balance || 0, 0);
+    if (bal <= 0) return;
+    const k = a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Other';
+    pieData[k] = (pieData[k] || 0) + bal;
+  });
+  drawPie(pieData);
+
+  // Categories bar chart — top expense categories for current period
+  document.getElementById('cats-chart-sub').textContent = 'Current ' + lbl;
+  const catSpent = {};
+  curTxs.filter(t => t.type === 'expense').forEach(t => {
+    const k = t.category || 'Uncategorized';
+    catSpent[k] = (catSpent[k] || 0) + t.amount;
+  });
+  const sortedCats = Object.entries(catSpent).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  drawCats(sortedCats);
+
+  // Recent activity
   const list = document.getElementById('recent-list');
   const recent = data.transactions.slice(0, 8);
   document.getElementById('recent-count').textContent = data.transactions.length + ' total';
@@ -1908,6 +2180,123 @@ function renderHome() {
   } else {
     list.innerHTML = recent.map(t => renderTxRow(t)).join('');
   }
+}
+
+function drawPie(dataObj) {
+  const entries = Object.entries(dataObj).filter(([,v]) => v > 0);
+  let canvas = document.getElementById('chart-pie');
+  if (!canvas) {
+    // Canvas was destroyed by previous empty state — recreate it
+    const wrap = document.querySelector('#sec-home .chart-card:nth-of-type(1) .chart-canvas-wrap')
+      || document.querySelectorAll('#sec-home .chart-canvas-wrap')[0];
+    if (wrap) wrap.innerHTML = '<canvas id="chart-pie"></canvas>';
+    canvas = document.getElementById('chart-pie');
+  }
+  if (!canvas || !window.Chart) return;
+  if (chartPie) { chartPie.destroy(); chartPie = null; }
+  if (entries.length === 0) {
+    // Show empty message but keep a placeholder so the canvas can be recreated
+    const wrap = canvas.parentElement;
+    wrap.innerHTML = '<div class="empty" style="padding:40px 20px">No balance data</div>';
+    return;
+  }
+  chartPie = new window.Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(([k]) => k),
+      datasets: [{
+        data: entries.map(([,v]) => v),
+        backgroundColor: ['#d4af37','#a08020','#f4cf5f','#8b5cf6','#3b82f6','#10b981','#6b6b65'],
+        borderColor: '#0a0a0a',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#a8a8a0',
+            font: { family: 'Inter', size: 11, weight: '500' },
+            padding: 14, usePointStyle: true, pointStyle: 'circle', boxWidth: 8
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          titleColor: '#d4af37',
+          titleFont: { family: 'Playfair Display', size: 13, weight: '600' },
+          bodyColor: '#f5f5f0',
+          bodyFont: { family: 'Inter', size: 12 },
+          padding: 12,
+          borderColor: 'rgba(212,175,55,0.3)',
+          borderWidth: 1,
+          callbacks: { label: c => formatMoney(c.parsed) }
+        }
+      }
+    }
+  });
+}
+
+function drawCats(entries) {
+  let canvas = document.getElementById('chart-cats');
+  if (!canvas) {
+    const wrap = document.querySelectorAll('#sec-home .chart-canvas-wrap')[1];
+    if (wrap) wrap.innerHTML = '<canvas id="chart-cats"></canvas>';
+    canvas = document.getElementById('chart-cats');
+  }
+  if (!canvas || !window.Chart) return;
+  if (chartCats) { chartCats.destroy(); chartCats = null; }
+  if (!entries.length) {
+    const wrap = canvas.parentElement;
+    wrap.innerHTML = '<div class="empty" style="padding:40px 20px">No expenses for this period</div>';
+    return;
+  }
+  chartCats = new window.Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: entries.map(([k]) => k),
+      datasets: [{
+        data: entries.map(([,v]) => v),
+        backgroundColor: ctx2 => {
+          const c = ctx2.chart.ctx.createLinearGradient(0, 0, 400, 0);
+          c.addColorStop(0, '#a08020'); c.addColorStop(1, '#f4cf5f');
+          return c;
+        },
+        borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          titleColor: '#d4af37',
+          bodyColor: '#f5f5f0',
+          padding: 10,
+          borderColor: 'rgba(212,175,55,0.3)', borderWidth: 1,
+          callbacks: { label: c => formatMoney(c.parsed.x) }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#6b6b65', font: { family: 'Inter', size: 10 },
+            callback: v => '$' + (v / 1000).toFixed(0) + 'k'
+          },
+          grid: { color: 'rgba(212,175,55,0.05)' }
+        },
+        y: {
+          ticks: { color: '#a8a8a0', font: { family: 'Inter', size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
 }
 
 function renderTxRow(t) {
