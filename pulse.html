@@ -113,12 +113,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   font-size: 13px; line-height: 1.6; text-align: center;
 }
 .boot-error strong { display: block; color: var(--red); margin-bottom: 6px; font-size: 14px; }
-.boot-cta {
-  margin-top: 8px; padding: 10px 18px;
-  background: var(--gold-soft); border: 1px solid var(--border-strong);
-  border-radius: 10px; color: var(--gold);
-  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em;
-}
 
 /* ─────── ICONS (inline SVG) ─────── */
 .ico { width: 18px; height: 18px; stroke-width: 2; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -951,7 +945,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   <div class="spinner"></div>
   <div class="boot-msg" id="boot-msg">Loading</div>
   <div id="boot-error" class="boot-error hidden"></div>
-  <button id="boot-cta" class="boot-cta hidden" onclick="openConfigFromBoot()">Configure Firebase</button>
 </div>
 
 <!-- ═══════ TOAST ═══════ -->
@@ -985,9 +978,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
         <span id="auth-submit-text">Sign in</span>
       </button>
       <div id="auth-error" class="error-msg"></div>
-    </div>
-    <div style="text-align:center; margin-top: 20px;">
-      <button class="text-btn" onclick="openConfigModal()">Firebase config</button>
     </div>
   </div>
 </div>
@@ -1329,15 +1319,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 
     <div class="settings-section">System</div>
     <div class="settings-card">
-      <div class="settings-row" onclick="openConfigModal()">
-        <div class="settings-row-icon">
-          <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </div>
-        <div class="settings-row-body">
-          <div class="settings-row-title">Firebase config</div>
-          <div class="settings-row-sub">Backend keys</div>
-        </div>
-      </div>
       <div class="settings-row" onclick="confirmSignOut()">
         <div class="settings-row-icon danger">
           <svg class="ico" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -1466,21 +1447,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   </div>
 </div>
 
-<!-- Firebase config modal -->
-<div class="popup-overlay" id="config-modal" onclick="if(event.target===this)closeModal('config-modal')">
-  <div class="popup-sheet">
-    <div class="popup-handle"></div>
-    <div class="popup-title">Firebase config</div>
-    <p class="popup-sub">Paste the web config JSON from Firebase Console → Project settings → Your apps.</p>
-    <div class="field">
-      <div class="field-label">Config JSON</div>
-      <textarea id="config-input" rows="9" placeholder='{ "apiKey": "...", "projectId": "...", ... }' style="font-family: 'SF Mono', monospace; font-size: 12px; padding: 12px 14px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; color: var(--text); width: 100%; resize: vertical;"></textarea>
-    </div>
-    <button class="save-btn" onclick="saveConfig()">Save and reload</button>
-    <button class="popup-cancel" onclick="closeModal('config-modal')">Cancel</button>
-  </div>
-</div>
-
 <!-- Import modal -->
 <div class="popup-overlay" id="import-modal" onclick="if(event.target===this)closeModal('import-modal')">
   <div class="popup-sheet">
@@ -1589,13 +1555,12 @@ function setBootMessage(msg) {
   document.getElementById('boot-msg').textContent = msg;
 }
 
-function showBootError(title, detail, showConfigBtn = false) {
+function showBootError(title, detail) {
   document.querySelector('#boot .spinner').classList.add('hidden');
   document.querySelector('#boot .boot-msg').classList.add('hidden');
   const el = document.getElementById('boot-error');
   el.innerHTML = '<strong>' + title + '</strong>' + detail;
   el.classList.remove('hidden');
-  if (showConfigBtn) document.getElementById('boot-cta').classList.remove('hidden');
 }
 
 function hideBoot() {
@@ -1646,16 +1611,14 @@ setTimeout(() => {
 }, 10000);
 
 function boot() {
-  setBootMessage('Checking config');
+  setBootMessage('Connecting');
   const cfg = getStoredConfig();
   if (!cfg) {
-    // No config → show auth screen with "Firebase config" button
-    showAuth();
-    showToast('Firebase config needed — tap the bottom link', true, 4500);
+    showBootError('Connection unavailable',
+      'Backend not configured. Please reload the page.');
     return;
   }
 
-  setBootMessage('Connecting');
   try {
     fbApp = window.FB.initializeApp(cfg);
     fbAuth = window.FB.getAuth(fbApp);
@@ -1673,10 +1636,9 @@ function boot() {
     });
   } catch (err) {
     console.error('Firebase init failed:', err);
-    showBootError('Firebase config invalid',
-      'The saved config didn\'t initialize. Tap below to re-enter it.<br><br>' +
-      '<span style="color:var(--text-dim); font-size:11px;">' + err.message + '</span>',
-      true);
+    showBootError('Connection error',
+      'Couldn\'t connect to the backend. Try reloading.<br><br>' +
+      '<span style="color:var(--text-dim); font-size:11px;">' + err.message + '</span>');
   }
 }
 
@@ -1704,12 +1666,6 @@ function getStoredConfig() {
   return null;
 }
 
-window.openConfigFromBoot = function() {
-  hideBoot();
-  showAuth();
-  openConfigModal();
-};
-
 // =====================================================================
 //                      AUTH
 // =====================================================================
@@ -1733,7 +1689,7 @@ function hideAuthError() {
 
 window.submitAuth = async function() {
   if (!fbAuth) {
-    showAuthError('Firebase not configured — open "Firebase config" below.');
+    showAuthError('Connection unavailable — please reload the page.');
     return;
   }
   const email = document.getElementById('auth-email').value.trim();
@@ -2957,22 +2913,6 @@ window.editProfile = async function() {
     renderSettings();
     showToast('Updated');
   } catch (err) { console.error(err); showToast('Update failed', true); }
-};
-
-window.openConfigModal = function() {
-  document.getElementById('config-input').value = localStorage.getItem(STORAGE_CONFIG) || '';
-  openModal('config-modal');
-};
-
-window.saveConfig = function() {
-  const raw = document.getElementById('config-input').value.trim();
-  try {
-    const cfg = JSON.parse(raw);
-    if (!cfg.apiKey || !cfg.projectId) throw new Error('Missing apiKey or projectId');
-    localStorage.setItem(STORAGE_CONFIG, JSON.stringify(cfg));
-    showToast('Saved — reloading');
-    setTimeout(() => location.reload(), 600);
-  } catch (err) { showToast('Invalid JSON: ' + err.message, true); }
 };
 
 window.exportData = function() {
