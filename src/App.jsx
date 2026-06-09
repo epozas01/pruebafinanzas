@@ -18,13 +18,17 @@ const Analytics  = lazy(() => import('./components/Analytics'))
 const Portfolio  = lazy(() => import('./components/Portfolio'))
 
 const TABS = [
-  { id: 'dashboard',    label: 'Home',     icon: '⌂' },
-  { id: 'accounts',     label: 'Accounts', icon: '🏦' },
-  { id: 'transactions', label: 'Ledger',   icon: '≡'  },
-  { id: 'budget',       label: 'Budget',   icon: '◎'  },
-  { id: 'analytics',    label: 'Charts',   icon: '▲'  },
-  { id: 'recurring',    label: 'Repeat',   icon: '↻'  },
-  { id: 'portfolio',    label: 'Stocks',   icon: '📈' },
+  { id: 'home',      label: 'Home',     icon: '⌂'  },
+  { id: 'accounts',  label: 'Accounts', icon: '🏦' },
+  { id: 'ledger',    label: 'Ledger',   icon: '≡'  },
+  { id: 'portfolio', label: 'Stocks',   icon: '📈' },
+]
+
+const HOME_TABS = [
+  { id: 'overview',  label: 'Overview' },
+  { id: 'budget',    label: 'Budget'   },
+  { id: 'analytics', label: 'Charts'   },
+  { id: 'recurring', label: 'Repeat'   },
 ]
 
 function LoadingScreen() {
@@ -52,7 +56,8 @@ function LoadingScreen() {
 
 export default function App() {
   const user  = useAuth()
-  const [tab, setTab]               = useState('dashboard')
+  const [tab, setTab]               = useState('home')
+  const [homeTab, setHomeTab]       = useState('overview')
   const [showForm, setShowForm]     = useState(false)
   const [showSettings, setSettings] = useState(false)
   const [privacy, setPrivacy]       = useState(false)
@@ -93,7 +98,8 @@ export default function App() {
   if (user === undefined) return <LoadingScreen />
   if (user === null)      return <Auth />
 
-  const hideFab = tab === 'accounts' || tab === 'recurring' || tab === 'portfolio'
+  const hideFab = tab === 'accounts' || tab === 'portfolio' ||
+                  (tab === 'home' && homeTab === 'recurring')
 
   async function handleSave(tx) {
     if (editingTx) {
@@ -149,31 +155,47 @@ export default function App() {
       </div>
 
       {/* Main content */}
-      {tab === 'dashboard' && (
-        txLoading
-          ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-          : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('transactions')} onEdit={openEditTx} />
+      {tab === 'home' && (
+        <>
+          <div className="home-subnav">
+            {HOME_TABS.map(t => (
+              <button
+                key={t.id}
+                className={`home-subnav-btn ${homeTab === t.id ? 'active' : ''}`}
+                onClick={() => setHomeTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {homeTab === 'overview' && (
+            txLoading
+              ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
+              : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('ledger')} onEdit={openEditTx} />
+          )}
+          {homeTab === 'budget' && (
+            txLoading
+              ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
+              : <Budget transactions={transactions} uid={user.uid} />
+          )}
+          {homeTab === 'analytics' && (
+            <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading charts…</div>}>
+              {txLoading
+                ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
+                : <Analytics transactions={transactions} accounts={accounts} />
+              }
+            </Suspense>
+          )}
+          {homeTab === 'recurring' && <Recurring uid={user.uid} />}
+        </>
       )}
       {tab === 'accounts' && <Accounts uid={user.uid} transactions={transactions} />}
-      {tab === 'transactions' && (
+      {tab === 'ledger' && (
         txLoading
           ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
           : <Transactions transactions={transactions} onDelete={handleDelete} onEdit={openEditTx} />
       )}
-      {tab === 'budget' && (
-        txLoading
-          ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-          : <Budget transactions={transactions} uid={user.uid} />
-      )}
-      {tab === 'analytics' && (
-        <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading charts…</div>}>
-          {txLoading
-            ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-            : <Analytics transactions={transactions} accounts={accounts} />
-          }
-        </Suspense>
-      )}
-      {tab === 'recurring' && <Recurring uid={user.uid} />}
       {tab === 'portfolio' && (
         <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading…</div>}>
           <Portfolio uid={user.uid} />

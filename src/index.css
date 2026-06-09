@@ -80,6 +80,38 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 }
 .privacy-btn:hover { border-color: var(--border-strong); color: var(--gold); }
 
+/* ── Home sub-navigation ── */
+.home-subnav {
+  display: flex;
+  gap: 6px;
+  padding: 14px 16px 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.home-subnav::-webkit-scrollbar { display: none; }
+.home-subnav-btn {
+  flex-shrink: 0;
+  padding: 7px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.home-subnav-btn.active {
+  background: rgba(212,175,55,0.1);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.home-subnav-btn:hover:not(.active) {
+  border-color: var(--border-strong);
+  color: var(--text-mid);
+}
+
 /* ── Bottom nav ── */
 .bottom-nav {
   position: fixed;
