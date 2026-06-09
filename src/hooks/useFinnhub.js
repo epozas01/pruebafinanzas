@@ -86,7 +86,7 @@ export function useFinnhub(tickers) {
     }
 
     fetchAll()
-    timerRef.current = setInterval(fetchAll, 60_000)
+    timerRef.current = setInterval(fetchAll, 300_000)
     return () => clearInterval(timerRef.current)
   }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 

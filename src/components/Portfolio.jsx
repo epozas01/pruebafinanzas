@@ -410,7 +410,7 @@ export default function Portfolio({ uid }) {
             ) : (
               <>
                 <span style={{ color: 'var(--gold)', opacity: .7 }}>●</span>
-                {' '}15-min delayed · refreshes every 60s
+                {' '}15-min delayed · refreshes every 5 min
               </>
             )}
           </div>
