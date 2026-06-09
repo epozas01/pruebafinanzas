@@ -5,15 +5,26 @@ import { ACCOUNT_TYPES } from '../data/currencies'
 import { formatCurrency } from '../utils/format'
 import AccountForm from './AccountForm'
 
-// For assets:      balance = opening + income − expense  (income adds, expense removes)
-// For liabilities: balance = opening + expense − income  (charges add, payments reduce)
 function computeBalance(acc, transactions) {
   const isAsset = ACCOUNT_TYPES.find(t => t.id === acc.type)?.isAsset ?? true
-  const linked  = transactions.filter(t => t.accountId === acc.id)
-  const income  = linked.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const expense = linked.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  const linked  = transactions.filter(t =>
+    t.type === 'transfer'
+      ? t.fromAccountId === acc.id || t.toAccountId === acc.id
+      : t.accountId === acc.id
+  )
+  let inflow = 0, outflow = 0
+  linked.forEach(t => {
+    if (t.type === 'transfer') {
+      if (t.fromAccountId === acc.id) outflow += t.amount
+      else inflow += t.amount
+    } else if (t.type === 'income') {
+      inflow += t.amount
+    } else {
+      outflow += t.amount
+    }
+  })
   const opening = acc.openingBalance ?? acc.balance ?? 0
-  return isAsset ? opening + income - expense : opening + expense - income
+  return isAsset ? opening + inflow - outflow : opening + outflow - inflow
 }
 
 function PatrimonyCard({ accountsWithBalance, toBase, baseCurrency, ratesLoading, ratesError, updatedAt }) {

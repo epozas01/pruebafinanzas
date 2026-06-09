@@ -7,17 +7,29 @@ import { today } from '../utils/format'
 const empty = (type = 'expense') => ({
   type,
   amount: '',
-  category: type === 'expense' ? 'food' : 'salary',
+  category: type === 'expense' ? 'food' : type === 'income' ? 'salary' : '',
   accountId: '',
+  fromAccountId: '',
+  toAccountId: '',
   description: '',
   date: today(),
   notes: '',
 })
 
-export default function TransactionForm({ onSave, onClose, uid }) {
+export default function TransactionForm({ onSave, onClose, uid, initial }) {
   const { categories: expenseCategories } = useBudgetCategories(uid)
   const { accounts } = useAccounts(uid)
-  const [form, setForm] = useState(empty('expense'))
+  const [form, setForm] = useState(() => initial ? {
+    type: initial.type ?? 'expense',
+    amount: String(initial.amount ?? ''),
+    category: initial.category ?? 'food',
+    accountId: initial.accountId ?? '',
+    fromAccountId: initial.fromAccountId ?? '',
+    toAccountId: initial.toAccountId ?? '',
+    description: initial.description ?? '',
+    date: initial.date ?? today(),
+    notes: initial.notes ?? '',
+  } : empty('expense'))
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -29,7 +41,19 @@ export default function TransactionForm({ onSave, onClose, uid }) {
     e.preventDefault()
     const amount = parseFloat(form.amount)
     if (!amount || amount <= 0) return
-    onSave({ ...form, amount })
+    if (form.type === 'transfer') {
+      if (!form.fromAccountId || !form.toAccountId) return
+      if (form.fromAccountId === form.toAccountId) return
+      const fromAcc = accounts.find(a => a.id === form.fromAccountId)
+      const toAcc   = accounts.find(a => a.id === form.toAccountId)
+      onSave({
+        ...form, amount,
+        fromAccountName: fromAcc?.name || '',
+        toAccountName:   toAcc?.name   || '',
+      })
+    } else {
+      onSave({ ...form, amount })
+    }
     onClose()
   }
 
@@ -43,7 +67,7 @@ export default function TransactionForm({ onSave, onClose, uid }) {
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="sheet">
         <div className="sheet-handle" />
-        <div className="sheet-title">New Transaction</div>
+        <div className="sheet-title">{initial ? 'Edit Transaction' : 'New Transaction'}</div>
 
         <div className="type-toggle">
           <button type="button" className={`type-btn expense ${form.type === 'expense' ? 'active' : ''}`} onClick={() => switchType('expense')}>
@@ -51,6 +75,9 @@ export default function TransactionForm({ onSave, onClose, uid }) {
           </button>
           <button type="button" className={`type-btn income ${form.type === 'income' ? 'active' : ''}`} onClick={() => switchType('income')}>
             ↓ Income
+          </button>
+          <button type="button" className={`type-btn transfer ${form.type === 'transfer' ? 'active' : ''}`} onClick={() => switchType('transfer')}>
+            ⇄ Transfer
           </button>
         </div>
 
@@ -60,30 +87,62 @@ export default function TransactionForm({ onSave, onClose, uid }) {
             <input type="number" min="0.01" step="0.01" placeholder="0.00" value={form.amount} onChange={set('amount')} required autoFocus />
           </div>
 
-          <div className="row2">
-            <div className="field">
-              <label className="field-label">Category</label>
-              <select value={safeCategory} onChange={set('category')}>
-                {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label className="field-label">Date</label>
-              <input type="date" value={form.date} onChange={set('date')} />
-            </div>
-          </div>
+          {form.type === 'transfer' ? (
+            <>
+              <div className="field">
+                <label className="field-label">From Account</label>
+                <select value={form.fromAccountId} onChange={set('fromAccountId')} required>
+                  <option value="">— Select account —</option>
+                  {accounts.map(a => (
+                    <option key={a.id} value={a.id} disabled={a.id === form.toAccountId}>
+                      {a.name}{a.bank ? ` · ${a.bank}` : ''} ({a.currency})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">To Account</label>
+                <select value={form.toAccountId} onChange={set('toAccountId')} required>
+                  <option value="">— Select account —</option>
+                  {accounts.map(a => (
+                    <option key={a.id} value={a.id} disabled={a.id === form.fromAccountId}>
+                      {a.name}{a.bank ? ` · ${a.bank}` : ''} ({a.currency})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">Date</label>
+                <input type="date" value={form.date} onChange={set('date')} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="row2">
+                <div className="field">
+                  <label className="field-label">Category</label>
+                  <select value={safeCategory} onChange={set('category')}>
+                    {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label className="field-label">Date</label>
+                  <input type="date" value={form.date} onChange={set('date')} />
+                </div>
+              </div>
 
-          {/* Account selector — only shown when user has accounts */}
-          {accounts.length > 0 && (
-            <div className="field">
-              <label className="field-label">Account</label>
-              <select value={form.accountId} onChange={set('accountId')}>
-                <option value="">— No account —</option>
-                {accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}{a.bank ? ` · ${a.bank}` : ''} ({a.currency})</option>
-                ))}
-              </select>
-            </div>
+              {accounts.length > 0 && (
+                <div className="field">
+                  <label className="field-label">Account</label>
+                  <select value={form.accountId} onChange={set('accountId')}>
+                    <option value="">— No account —</option>
+                    {accounts.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}{a.bank ? ` · ${a.bank}` : ''} ({a.currency})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
           )}
 
           <div className="field">
@@ -96,7 +155,7 @@ export default function TransactionForm({ onSave, onClose, uid }) {
             <textarea rows={2} placeholder="Any extra details…" value={form.notes} onChange={set('notes')} style={{ resize: 'none' }} />
           </div>
 
-          <button className="save-btn" type="submit">Save Transaction</button>
+          <button className="save-btn" type="submit">{initial ? 'Save Changes' : 'Save Transaction'}</button>
         </form>
       </div>
     </div>

@@ -130,6 +130,11 @@ export default function Budget({ transactions, uid }) {
     return map
   }, [transactions, month])
 
+  const { totalBudget, totalSpent } = useMemo(() => ({
+    totalBudget: categories.reduce((s, cat) => s + (budgets[cat.id] || 0), 0),
+    totalSpent:  categories.reduce((s, cat) => s + (spending[cat.id] || 0), 0),
+  }), [categories, budgets, spending])
+
   async function saveEdit(catId) {
     const val = parseFloat(editVal)
     if (val > 0) await setBudgetLimit(catId, val)
@@ -139,6 +144,40 @@ export default function Budget({ transactions, uid }) {
 
   return (
     <>
+      {totalBudget > 0 && (() => {
+        const pct  = Math.min((totalSpent / totalBudget) * 100, 100)
+        const over = totalSpent > totalBudget
+        const left = totalBudget - totalSpent
+        return (
+          <div style={{
+            margin: '16px 16px 0',
+            background: 'linear-gradient(145deg, #1c1a0e, #0a0a0a)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius)',
+            padding: '20px 20px 18px',
+          }}>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--gold)', fontWeight: 600, marginBottom: 6 }}>
+              Monthly Budget
+            </div>
+            <div className="blur-private" style={{ fontFamily: 'var(--serif)', fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 14 }}>
+              {formatCurrency(totalSpent)}
+              <span style={{ fontSize: 16, color: 'var(--text-dim)', fontWeight: 400, marginLeft: 8 }}>
+                / {formatCurrency(totalBudget)}
+              </span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 10 }}>
+              <div style={{
+                height: '100%', borderRadius: 3, transition: 'width .4s ease',
+                width: `${pct}%`,
+                background: over ? 'var(--red)' : pct > 75 ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,var(--gold-bright),var(--gold))',
+              }} />
+            </div>
+            <div style={{ fontSize: 12, color: over ? 'var(--red)' : 'var(--text-dim)', fontWeight: over ? 700 : 400 }}>
+              {over ? `⚠️ Over budget by ${formatCurrency(Math.abs(left))}` : `${formatCurrency(left)} remaining this month`}
+            </div>
+          </div>
+        )
+      })()}
       <div className="sec-head">
         <div className="sec-title">Monthly Budget</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

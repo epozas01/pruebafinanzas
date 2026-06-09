@@ -2,27 +2,35 @@ import { useMemo } from 'react'
 import { formatCurrency, formatDate, isoMonth } from '../utils/format'
 import { getCategoryMeta } from '../data/categories'
 
-function TxRow({ tx, onDelete }) {
-  const meta = getCategoryMeta(tx.category, tx.type)
+function TxRow({ tx, onDelete, onEdit }) {
+  const isTransfer = tx.type === 'transfer'
+  const meta = isTransfer ? null : getCategoryMeta(tx.category, tx.type)
   return (
     <div className="tx-item">
-      <div className={`tx-icon ${tx.type}`}>{meta.icon}</div>
+      <div className={`tx-icon ${tx.type}`}>{isTransfer ? '⇄' : meta.icon}</div>
       <div className="tx-info">
-        <div className="tx-desc">{tx.description || meta.label}</div>
-        <div className="tx-meta">{meta.label}</div>
+        <div className="tx-desc">{tx.description || (isTransfer ? 'Transfer' : meta.label)}</div>
+        <div className="tx-meta">
+          {isTransfer
+            ? `${tx.fromAccountName || '—'} → ${tx.toAccountName || '—'}`
+            : meta.label}
+        </div>
       </div>
       <div className="tx-right">
         <div className={`tx-amt ${tx.type}`}>
-          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+          {!isTransfer && (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
         </div>
         <div className="tx-date">{formatDate(tx.date)}</div>
       </div>
-      <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
+      <div style={{ display: 'flex', gap: 2, flexShrink: 0, alignItems: 'center' }}>
+        {onEdit && <button className="tx-edit" onClick={() => onEdit(tx)} title="Edit">✎</button>}
+        <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
+      </div>
     </div>
   )
 }
 
-export default function Dashboard({ transactions, onDelete, onShowAll }) {
+export default function Dashboard({ transactions, onDelete, onShowAll, onEdit }) {
   const month = isoMonth()
 
   const { balance, monthIncome, monthExpense, recent } = useMemo(() => {
@@ -75,7 +83,7 @@ export default function Dashboard({ transactions, onDelete, onShowAll }) {
             <div className="empty-msg">No transactions yet.<br />Tap + to add your first one.</div>
           </div>
         ) : (
-          recent.map(tx => <TxRow key={tx.id} tx={tx} onDelete={onDelete} />)
+          recent.map(tx => <TxRow key={tx.id} tx={tx} onDelete={onDelete} onEdit={onEdit} />)
         )}
       </div>
     </>

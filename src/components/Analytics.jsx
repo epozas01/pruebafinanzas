@@ -5,6 +5,8 @@ import {
 } from 'recharts'
 import { EXPENSE_CATEGORIES, CATEGORY_COLORS } from '../data/categories'
 import { formatCurrency, isoMonth } from '../utils/format'
+import { useExchangeRates } from '../hooks/useExchangeRates'
+import { ACCOUNT_TYPES } from '../data/currencies'
 
 function last6Months() {
   const months = []
@@ -38,7 +40,8 @@ const CustomTooltip = ({ active, payload }) => {
   )
 }
 
-export default function Analytics({ transactions }) {
+export default function Analytics({ transactions, accounts = [] }) {
+  const { toBase, baseCurrency } = useExchangeRates()
   const months = last6Months()
   const [selectedMonth, setSelectedMonth] = useState(isoMonth())
 
@@ -69,6 +72,39 @@ export default function Analytics({ transactions }) {
 
     return { pieData: pie, barData: bar, totalExp: tExp, totalInc: tInc }
   }, [transactions, selectedMonth])
+
+  const ACCOUNT_COLORS = ['#4ade80','#60a5fa','#f59e0b','#a78bfa','#34d399','#f87171','#fb923c','#e879f9','#22d3ee','#86efac']
+
+  const patrimonyData = useMemo(() => {
+    if (!accounts.length) return []
+    return accounts.map((acc, i) => {
+      const type    = ACCOUNT_TYPES.find(t => t.id === acc.type)
+      const isAsset = type?.isAsset ?? true
+      const linked  = transactions.filter(t =>
+        t.type === 'transfer'
+          ? t.fromAccountId === acc.id || t.toAccountId === acc.id
+          : t.accountId === acc.id
+      )
+      let inflow = 0, outflow = 0
+      linked.forEach(t => {
+        if (t.type === 'transfer') {
+          if (t.fromAccountId === acc.id) outflow += t.amount
+          else inflow += t.amount
+        } else if (t.type === 'income') inflow += t.amount
+        else outflow += t.amount
+      })
+      const opening = acc.openingBalance ?? acc.balance ?? 0
+      const balance = isAsset ? opening + inflow - outflow : opening + outflow - inflow
+      const inBase  = toBase(balance, acc.currency) ?? balance
+      return {
+        name:    `${type?.icon || ''} ${acc.name}`,
+        value:   Math.max(0, Math.abs(inBase)),
+        isAsset,
+        raw:     inBase,
+        color:   ACCOUNT_COLORS[i % ACCOUNT_COLORS.length],
+      }
+    }).filter(d => d.value > 0.01)
+  }, [accounts, transactions, toBase])
 
   return (
     <>
@@ -167,6 +203,57 @@ export default function Analytics({ transactions }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Patrimony pie */}
+      {patrimonyData.length > 0 && (
+        <>
+          <div style={{ padding: '8px 16px 8px', fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600 }}>
+            Patrimony Breakdown
+          </div>
+          <div style={{ padding: '0 16px' }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={patrimonyData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {patrimonyData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} strokeWidth={0} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload
+                    return (
+                      <div style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
+                        <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 4 }}>{d.name}</div>
+                        <div style={{ color: d.isAsset ? 'var(--green)' : 'var(--red)' }}>
+                          {d.isAsset ? '' : '−'}{formatCurrency(d.value, baseCurrency)}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{d.isAsset ? 'Asset' : 'Liability'}</div>
+                      </div>
+                    )
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingBottom: 20 }}>
+              {patrimonyData.map((d, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-mid)' }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 }} />
+                  {d.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }
