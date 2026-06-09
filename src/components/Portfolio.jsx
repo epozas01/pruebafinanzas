@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { pie as d3Pie, arc as d3Arc } from 'd3'
+import { pie as d3Pie, arc as d3Arc, scaleLinear, line as d3Line, area as d3Area } from 'd3'
 import { formatCurrency } from '../utils/format'
 import { usePortfolio } from '../hooks/usePortfolio'
 import { useFinnhub, useHistoricalPrices, fetchSearch, validateTicker } from '../hooks/useFinnhub'
@@ -68,22 +68,32 @@ function AllocationDonut({ data, total }) {
   )
 }
 
-// ─── 7-day sparkline ─────────────────────────────────────────────────────────
+// ─── 7-day sparkline (D3) ────────────────────────────────────────────────────
 function Sparkline({ data, ticker }) {
   if (!data?.length || data.length < 2) return null
-  const prices  = data.map(d => d.price)
-  const min     = Math.min(...prices)
-  const max     = Math.max(...prices)
-  const range   = max - min || 1
-  const isUp    = prices[prices.length - 1] >= prices[0]
-  const color   = isUp ? '#34d399' : '#f87171'
+
+  const prices = data.map(d => d.price)
+  const isUp   = prices[prices.length - 1] >= prices[0]
+  const color  = isUp ? '#34d399' : '#f87171'
   const W = 300, H = 44
-  const xOf = i => (i / (prices.length - 1)) * W
-  const yOf = p => H - 6 - ((p - min) / range) * (H - 12)
-  const pts  = prices.map((p, i) => `${xOf(i).toFixed(1)},${yOf(p).toFixed(1)}`)
-  const line = pts.join(' ')
-  const area = `0,${H} ${line} ${W},${H}`
-  const gid  = `sg-${(ticker || 'x').replace(/\W/g, '')}`
+
+  const xScale = scaleLinear().domain([0, prices.length - 1]).range([0, W])
+  const yScale = scaleLinear()
+    .domain([Math.min(...prices), Math.max(...prices)])
+    .range([H - 6, 6])
+
+  const linePath = d3Line()
+    .x((_, i) => xScale(i))
+    .y(d => yScale(d))
+    (prices)
+
+  const areaPath = d3Area()
+    .x((_, i) => xScale(i))
+    .y0(H)
+    .y1(d => yScale(d))
+    (prices)
+
+  const gid = `sg-${(ticker || 'x').replace(/\W/g, '')}`
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}
@@ -94,8 +104,8 @@ function Sparkline({ data, ticker }) {
           <stop offset="100%" stopColor={color} stopOpacity={0}    />
         </linearGradient>
       </defs>
-      <polygon points={area} fill={`url(#${gid})`} />
-      <polyline points={line} fill="none" stroke={color} strokeWidth={2}
+      <path d={areaPath} fill={`url(#${gid})`} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth={2}
         strokeLinejoin="round" strokeLinecap="round"
         vectorEffect="non-scaling-stroke" />
     </svg>
