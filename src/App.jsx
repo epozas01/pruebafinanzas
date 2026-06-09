@@ -105,7 +105,7 @@ export default function App() {
           ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
           : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('transactions')} />
       )}
-      {tab === 'accounts' && <Accounts uid={user.uid} />}
+      {tab === 'accounts' && <Accounts uid={user.uid} transactions={transactions} />}
       {tab === 'transactions' && (
         txLoading
           ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
@@ -146,7 +146,7 @@ export default function App() {
 
       {/* Add transaction sheet */}
       {showForm && (
-        <TransactionForm onSave={handleSave} onClose={() => setShowForm(false)} />
+        <TransactionForm onSave={handleSave} onClose={() => setShowForm(false)} uid={user.uid} />
       )}
 
       {/* Account settings sheet */}

@@ -94,7 +94,7 @@ export default function AccountForm({ initial, onSave, onClose }) {
             </div>
             <div className="field">
               <label className="field-label">
-                {typeMeta.isAsset ? 'Current Balance' : 'Amount Owed'}
+                {typeMeta.isAsset ? 'Opening Balance' : 'Current Balance Owed'}
               </label>
               <input
                 type="number"
