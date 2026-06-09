@@ -66,14 +66,22 @@ export function useFinnhub(tickers) {
       setLoading(true)
       setError(null)
       try {
+        // Do NOT encodeURIComponent the full list — commas must stay as commas
         const symbolParam = tdSymbols.join(',')
-        const res  = await fetch(`${TD_BASE}/quote?symbol=${encodeURIComponent(symbolParam)}&apikey=${TD_KEY}`)
+        const res  = await fetch(`${TD_BASE}/quote?symbol=${symbolParam}&apikey=${TD_KEY}`)
         const data = await res.json()
+
+        // Surface API-level errors (bad key, rate limit, etc.)
+        if (data.status === 'error') {
+          setError(data.message || 'Twelve Data API error')
+          setLoading(false)
+          return
+        }
 
         const result = {}
         tickers.forEach((ticker, i) => {
-          // Single-ticker response: data is the quote directly
-          // Multi-ticker response: data is keyed by TD symbol
+          // Single-ticker: data is the quote directly
+          // Multi-ticker: data is keyed by TD symbol
           const q = tickers.length === 1 ? data : (data[tdSymbols[i]] ?? data[ticker])
           result[ticker] = normalize(q)
         })
