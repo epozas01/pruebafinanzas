@@ -55,6 +55,58 @@ export async function validateTicker(ticker) {
   return data.price ? parseFloat(data.price) : null
 }
 
+// ─── History fetch ───────────────────────────────────────────────────────────
+
+export async function fetchHistory(ticker) {
+  const to   = Math.floor(Date.now() / 1000)
+  const from = to - 10 * 24 * 60 * 60  // 10 days back → ensures ≥7 trading days
+
+  if (!isIntl(ticker)) {
+    const res  = await fetch(
+      `${FH_BASE}/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${from}&to=${to}&token=${FH_KEY}`
+    )
+    const data = await res.json()
+    if (data.s !== 'ok' || !data.c?.length) return []
+    return data.c.slice(-7).map((price, i, arr) => ({
+      date:  data.t[data.t.length - arr.length + i] * 1000,
+      price,
+    }))
+  } else {
+    const sym = toTD(ticker)
+    const res  = await fetch(
+      `${TD_BASE}/time_series?symbol=${encodeURIComponent(sym)}&interval=1day&outputsize=7&apikey=${TD_KEY}`
+    )
+    const data = await res.json()
+    if (data.status === 'error' || !data.values?.length) return []
+    return [...data.values].reverse().map(v => ({
+      date:  new Date(v.datetime).getTime(),
+      price: parseFloat(v.close),
+    }))
+  }
+}
+
+export function useHistoricalPrices(tickers) {
+  const [history,     setHistory]     = useState({})
+  const [histLoading, setHistLoading] = useState(false)
+  const key = tickers.join(',')
+
+  useEffect(() => {
+    if (!tickers.length) { setHistory({}); return }
+    setHistLoading(true)
+    Promise.all(
+      tickers.map(async t => {
+        try   { return [t, await fetchHistory(t)] }
+        catch { return [t, []] }
+      })
+    ).then(entries => {
+      setHistory(Object.fromEntries(entries))
+      setHistLoading(false)
+    })
+  }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { history, histLoading }
+}
+
 // ─── Quote hook ──────────────────────────────────────────────────────────────
 
 export function useFinnhub(tickers) {

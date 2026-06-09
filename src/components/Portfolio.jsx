@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { pie as d3Pie, arc as d3Arc } from 'd3'
 import { formatCurrency } from '../utils/format'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { useFinnhub, fetchSearch, validateTicker } from '../hooks/useFinnhub'
+import { useFinnhub, useHistoricalPrices, fetchSearch, validateTicker } from '../hooks/useFinnhub'
 
 const COLORS = [
   '#d4af37', '#34d399', '#fb923c', '#a78bfa',
@@ -64,6 +64,40 @@ function AllocationDonut({ data, total }) {
           </text>
         </>}
       </g>
+    </svg>
+  )
+}
+
+// ─── 7-day sparkline ─────────────────────────────────────────────────────────
+function Sparkline({ data, ticker }) {
+  if (!data?.length || data.length < 2) return null
+  const prices  = data.map(d => d.price)
+  const min     = Math.min(...prices)
+  const max     = Math.max(...prices)
+  const range   = max - min || 1
+  const isUp    = prices[prices.length - 1] >= prices[0]
+  const color   = isUp ? '#34d399' : '#f87171'
+  const W = 300, H = 44
+  const xOf = i => (i / (prices.length - 1)) * W
+  const yOf = p => H - 6 - ((p - min) / range) * (H - 12)
+  const pts  = prices.map((p, i) => `${xOf(i).toFixed(1)},${yOf(p).toFixed(1)}`)
+  const line = pts.join(' ')
+  const area = `0,${H} ${line} ${W},${H}`
+  const gid  = `sg-${(ticker || 'x').replace(/\W/g, '')}`
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}
+      preserveAspectRatio="none" style={{ display: 'block', borderRadius: 4 }}>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor={color} stopOpacity={0.22} />
+          <stop offset="100%" stopColor={color} stopOpacity={0}    />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#${gid})`} />
+      <polyline points={line} fill="none" stroke={color} strokeWidth={2}
+        strokeLinejoin="round" strokeLinecap="round"
+        vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }
@@ -215,88 +249,113 @@ function HoldingForm({ initial, onSave, onClose }) {
 }
 
 // ─── Holding card ────────────────────────────────────────────────────────────
-function HoldingCard({ holding, onEdit, onDelete }) {
+function HoldingCard({ holding, sparkData, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { color, ticker, name, shares, price, dailyChangePct, totalValue, gainLoss, gainLossPct } = holding
   const up = dailyChangePct != null && dailyChangePct >= 0
+
+  const weekChange = sparkData?.length >= 2
+    ? ((sparkData[sparkData.length - 1].price - sparkData[0].price) / sparkData[0].price) * 100
+    : null
+  const weekUp = weekChange != null && weekChange >= 0
 
   return (
     <div
       style={{
         background: 'var(--bg-card)', border: '1px solid var(--border)',
         borderRadius: 'var(--radius-sm)', padding: '14px 16px', marginBottom: 10,
-        display: 'flex', alignItems: 'center', gap: 14, transition: 'border-color .2s',
+        transition: 'border-color .2s',
       }}
       onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
     >
-      {/* Ticker badge */}
-      <div style={{
-        width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-        background: color + '18', border: `1px solid ${color}44`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: ticker.length > 3 ? 9 : 11, fontWeight: 800, color,
-        letterSpacing: '0.03em',
-      }}>
-        {ticker.slice(0, 5)}
-      </div>
-
-      {/* Name + meta */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {name || ticker}
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        {/* Ticker badge */}
+        <div style={{
+          width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+          background: color + '18', border: `1px solid ${color}44`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: ticker.length > 3 ? 9 : 11, fontWeight: 800, color,
+          letterSpacing: '0.03em',
+        }}>
+          {ticker.slice(0, 5)}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <span>{shares} share{shares !== 1 ? 's' : ''}</span>
-          {price != null && <span>${price.toFixed(2)}</span>}
-          {dailyChangePct != null && (
-            <span style={{ color: up ? 'var(--green)' : 'var(--red)' }}>
-              {up ? '+' : ''}{dailyChangePct.toFixed(2)}%
-            </span>
+
+        {/* Name + meta */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {name || ticker}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span>{shares} share{shares !== 1 ? 's' : ''}</span>
+            {price != null && <span>${price.toFixed(2)}</span>}
+            {dailyChangePct != null && (
+              <span style={{ color: up ? 'var(--green)' : 'var(--red)' }}>
+                {up ? '+' : ''}{dailyChangePct.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Value + gain */}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          {totalValue != null ? (
+            <div className="blur-private" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+              {formatCurrency(totalValue)}
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>Price N/A</div>
+          )}
+          {gainLoss != null && (
+            <div className="blur-private" style={{ fontSize: 11, color: gainLoss >= 0 ? 'var(--green)' : 'var(--red)', marginTop: 2, fontWeight: 600 }}>
+              {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss)}
+              <span style={{ fontWeight: 400, marginLeft: 4 }}>
+                ({gainLossPct >= 0 ? '+' : ''}{gainLossPct.toFixed(1)}%)
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+          <button
+            onClick={() => onEdit(holding)}
+            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14, padding: '2px 6px', borderRadius: 6 }}
+            title="Edit"
+          >✎</button>
+          {confirmDelete ? (
+            <button
+              onClick={() => onDelete(holding.id)}
+              style={{ background: 'rgba(248,113,113,0.15)', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 11, padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}
+            >✓</button>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              onBlur={() => setConfirmDelete(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14, padding: '2px 6px', borderRadius: 6 }}
+              title="Delete"
+            >✕</button>
           )}
         </div>
       </div>
 
-      {/* Value + gain */}
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        {totalValue != null ? (
-          <div className="blur-private" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-            {formatCurrency(totalValue)}
-          </div>
-        ) : (
-          <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>Price N/A</div>
-        )}
-        {gainLoss != null && (
-          <div className="blur-private" style={{ fontSize: 11, color: gainLoss >= 0 ? 'var(--green)' : 'var(--red)', marginTop: 2, fontWeight: 600 }}>
-            {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss)}
-            <span style={{ fontWeight: 400, marginLeft: 4 }}>
-              ({gainLossPct >= 0 ? '+' : ''}{gainLossPct.toFixed(1)}%)
+      {/* 7-day sparkline */}
+      {sparkData?.length >= 2 && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+            <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 600 }}>
+              7 days
             </span>
+            {weekChange != null && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: weekUp ? 'var(--green)' : 'var(--red)' }}>
+                {weekUp ? '+' : ''}{weekChange.toFixed(2)}%
+              </span>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-        <button
-          onClick={() => onEdit(holding)}
-          style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14, padding: '2px 6px', borderRadius: 6 }}
-          title="Edit"
-        >✎</button>
-        {confirmDelete ? (
-          <button
-            onClick={() => onDelete(holding.id)}
-            style={{ background: 'rgba(248,113,113,0.15)', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 11, padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}
-          >✓</button>
-        ) : (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            onBlur={() => setConfirmDelete(false)}
-            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14, padding: '2px 6px', borderRadius: 6 }}
-            title="Delete"
-          >✕</button>
-        )}
-      </div>
+          <Sparkline data={sparkData} ticker={ticker} />
+        </div>
+      )}
     </div>
   )
 }
@@ -306,6 +365,7 @@ export default function Portfolio({ uid }) {
   const { holdings, loading, addHolding, updateHolding, deleteHolding } = usePortfolio(uid)
   const tickers = useMemo(() => holdings.map(h => h.ticker), [holdings])
   const { quotes, loading: quotesLoading, error: quotesError } = useFinnhub(tickers)
+  const { history } = useHistoricalPrices(tickers)
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing]   = useState(null)
@@ -433,7 +493,7 @@ export default function Portfolio({ uid }) {
       ) : (
         <div className="tx-list">
           {enriched.map(h => (
-            <HoldingCard key={h.id} holding={h} onEdit={openEdit} onDelete={deleteHolding} />
+            <HoldingCard key={h.id} holding={h} sparkData={history[h.ticker]} onEdit={openEdit} onDelete={deleteHolding} />
           ))}
         </div>
       )}
