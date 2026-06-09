@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip, Label, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts'
 import { EXPENSE_CATEGORIES, CATEGORY_COLORS } from '../data/categories'
@@ -73,11 +73,19 @@ export default function Analytics({ transactions, accounts = [] }) {
     return { pieData: pie, barData: bar, totalExp: tExp, totalInc: tInc }
   }, [transactions, selectedMonth])
 
-  const ACCOUNT_COLORS = ['#4ade80','#60a5fa','#f59e0b','#a78bfa','#34d399','#f87171','#fb923c','#e879f9','#22d3ee','#86efac']
+  const TYPE_COLORS = {
+    checking:    '#60a5fa',
+    savings:     '#4ade80',
+    investment:  '#a78bfa',
+    cash:        '#34d399',
+    crypto:      '#f59e0b',
+    credit_card: '#f87171',
+    loan:        '#fb923c',
+  }
 
   const patrimonyData = useMemo(() => {
     if (!accounts.length) return []
-    return accounts.map((acc, i) => {
+    return accounts.map(acc => {
       const type    = ACCOUNT_TYPES.find(t => t.id === acc.type)
       const isAsset = type?.isAsset ?? true
       const linked  = transactions.filter(t =>
@@ -93,18 +101,27 @@ export default function Analytics({ transactions, accounts = [] }) {
         } else if (t.type === 'income') inflow += t.amount
         else outflow += t.amount
       })
-      const opening = acc.openingBalance ?? acc.balance ?? 0
-      const balance = isAsset ? opening + inflow - outflow : opening + outflow - inflow
-      const inBase  = toBase(balance, acc.currency) ?? balance
+      const opening   = acc.openingBalance ?? acc.balance ?? 0
+      const balance   = isAsset ? opening + inflow - outflow : opening + outflow - inflow
+      const inBase    = toBase(balance, acc.currency) ?? balance
       return {
-        name:    `${type?.icon || ''} ${acc.name}`,
-        value:   Math.max(0, Math.abs(inBase)),
+        name:      acc.name,
+        typeLabel: type?.label  || acc.type,
+        typeIcon:  type?.icon   || '',
+        value:     Math.max(0, Math.abs(inBase)),
         isAsset,
-        raw:     inBase,
-        color:   ACCOUNT_COLORS[i % ACCOUNT_COLORS.length],
+        color:     TYPE_COLORS[acc.type] || (isAsset ? '#4ade80' : '#f87171'),
       }
     }).filter(d => d.value > 0.01)
   }, [accounts, transactions, toBase])
+
+  const patrimonyStats = useMemo(() => {
+    const assets      = patrimonyData.filter(d =>  d.isAsset)
+    const liabilities = patrimonyData.filter(d => !d.isAsset)
+    const totalAssets = assets.reduce((s, d) => s + d.value, 0)
+    const totalLiab   = liabilities.reduce((s, d) => s + d.value, 0)
+    return { assets, liabilities, totalAssets, totalLiab, netWorth: totalAssets - totalLiab }
+  }, [patrimonyData])
 
   return (
     <>
@@ -205,55 +222,111 @@ export default function Analytics({ transactions, accounts = [] }) {
       </div>
 
       {/* Patrimony pie */}
-      {patrimonyData.length > 0 && (
-        <>
-          <div style={{ padding: '8px 16px 8px', fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600 }}>
-            Patrimony Breakdown
-          </div>
-          <div style={{ padding: '0 16px' }}>
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie
-                  data={patrimonyData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {patrimonyData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} strokeWidth={0} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null
-                    const d = payload[0].payload
-                    return (
-                      <div style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
-                        <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 4 }}>{d.name}</div>
-                        <div style={{ color: d.isAsset ? 'var(--green)' : 'var(--red)' }}>
-                          {d.isAsset ? '' : '−'}{formatCurrency(d.value, baseCurrency)}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{d.isAsset ? 'Asset' : 'Liability'}</div>
-                      </div>
-                    )
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingBottom: 20 }}>
-              {patrimonyData.map((d, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-mid)' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-                  {d.name}
-                </div>
-              ))}
+      {patrimonyData.length > 0 && (() => {
+        const { assets, liabilities, totalAssets, totalLiab, netWorth } = patrimonyStats
+        return (
+          <>
+            <div style={{ padding: '8px 16px 8px', fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 600 }}>
+              Patrimony Breakdown
             </div>
-          </div>
-        </>
-      )}
+            <div style={{
+              margin: '0 16px 24px',
+              background: 'linear-gradient(145deg, #1c1a0e, #0a0a0a)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: 'var(--radius)',
+              padding: '20px 16px',
+            }}>
+              <ResponsiveContainer width="100%" height={210}>
+                <PieChart>
+                  <Pie
+                    data={patrimonyData}
+                    cx="50%" cy="50%"
+                    innerRadius={62} outerRadius={92}
+                    paddingAngle={2} dataKey="value"
+                    strokeWidth={0}
+                  >
+                    {patrimonyData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                    <Label
+                      content={({ viewBox: { cx, cy } }) => (
+                        <g>
+                          <text x={cx} y={cy - 9} textAnchor="middle" fill="#6b6b65" fontSize={9} fontWeight={700} letterSpacing={1.5}>
+                            NET WORTH
+                          </text>
+                          <text x={cx} y={cy + 13} textAnchor="middle" fill={netWorth >= 0 ? '#f5f5f0' : '#f87171'} fontSize={15} fontWeight={700}>
+                            {netWorth < 0 ? '−' : ''}{formatCurrency(Math.abs(netWorth), baseCurrency)}
+                          </text>
+                        </g>
+                      )}
+                      position="center"
+                    />
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null
+                      const d = payload[0].payload
+                      return (
+                        <div style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
+                          <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 2 }}>{d.typeIcon} {d.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 6 }}>{d.typeLabel}</div>
+                          <div style={{ color: d.isAsset ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
+                            {d.isAsset ? '' : '−'}{formatCurrency(d.value, baseCurrency)}
+                          </div>
+                        </div>
+                      )
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
+                <div>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--green)', fontWeight: 700, marginBottom: 10 }}>Assets</div>
+                  {assets.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 9 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0, marginTop: 3 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.typeIcon} {d.name}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{d.typeLabel}</div>
+                        <div className="blur-private" style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginTop: 1 }}>{formatCurrency(d.value, baseCurrency)}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {assets.length > 1 && (
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>Total</span>
+                      <span className="blur-private" style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>{formatCurrency(totalAssets, baseCurrency)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--red)', fontWeight: 700, marginBottom: 10 }}>Liabilities</div>
+                  {liabilities.length === 0 ? (
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>None — debt free 🎉</div>
+                  ) : liabilities.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 9 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0, marginTop: 3 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.typeIcon} {d.name}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{d.typeLabel}</div>
+                        <div className="blur-private" style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginTop: 1 }}>{'−'}{formatCurrency(d.value, baseCurrency)}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {liabilities.length > 1 && (
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>Total</span>
+                      <span className="blur-private" style={{ fontSize: 12, fontWeight: 700, color: 'var(--red)' }}>{'−'}{formatCurrency(totalLiab, baseCurrency)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </>
   )
 }
