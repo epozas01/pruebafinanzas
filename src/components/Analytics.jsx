@@ -1,12 +1,77 @@
 import { useMemo, useState } from 'react'
 import {
-  PieChart, Pie, Cell, Tooltip, Label, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts'
 import { EXPENSE_CATEGORIES, CATEGORY_COLORS } from '../data/categories'
 import { formatCurrency, isoMonth } from '../utils/format'
 import { useExchangeRates } from '../hooks/useExchangeRates'
 import { ACCOUNT_TYPES } from '../data/currencies'
+
+// Custom SVG donut — no external deps, full style control
+function polar(cx, cy, r, deg) {
+  const rad = ((deg - 90) * Math.PI) / 180
+  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
+}
+
+function PatrimonyDonut({ data, netWorth, baseCurrency }) {
+  const [hovered, setHovered] = useState(null)
+  const SIZE = 220, CX = 110, CY = 110, OR = 90, IR = 60
+  const total = data.reduce((s, d) => s + d.value, 0)
+  if (!total) return null
+
+  const gap = data.length > 1 ? 2.5 : 0
+  let cum = 0
+  const slices = data.map((d, i) => {
+    const sweep = (d.value / total) * 360
+    const s0 = cum + gap / 2, s1 = cum + sweep - gap / 2
+    cum += sweep
+    const [ox0, oy0] = polar(CX, CY, OR, s0)
+    const [ox1, oy1] = polar(CX, CY, OR, s1)
+    const [ix0, iy0] = polar(CX, CY, IR, s0)
+    const [ix1, iy1] = polar(CX, CY, IR, s1)
+    const lg = sweep - gap > 180 ? 1 : 0
+    const path = `M${ox0},${oy0}A${OR},${OR},0,${lg},1,${ox1},${oy1}L${ix1},${iy1}A${IR},${IR},0,${lg},0,${ix0},${iy0}Z`
+    return { ...d, path }
+  })
+
+  const hov = hovered !== null ? slices[hovered] : null
+  const centerAmt = hov
+    ? `${hov.isAsset ? '' : '−'}${formatCurrency(hov.value, baseCurrency)}`
+    : `${netWorth < 0 ? '−' : ''}${formatCurrency(Math.abs(netWorth), baseCurrency)}`
+  const centerColor = hov ? hov.color : netWorth >= 0 ? '#f5f5f0' : '#f87171'
+
+  return (
+    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
+      style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
+      {slices.map((s, i) => (
+        <path key={i} d={s.path} fill={s.color}
+          opacity={hovered === null || hovered === i ? 1 : 0.3}
+          style={{ cursor: 'pointer', transition: 'opacity .18s' }}
+          onMouseEnter={() => setHovered(i)}
+          onMouseLeave={() => setHovered(null)}
+          onTouchStart={e => { e.preventDefault(); setHovered(i) }}
+          onTouchEnd={() => setTimeout(() => setHovered(null), 800)}
+        />
+      ))}
+      <text x={CX} y={CY - 10} textAnchor="middle" fill="#5a5a54"
+        fontSize={8} fontWeight={700} style={{ letterSpacing: 2, userSelect: 'none' }}>
+        {hov ? hov.typeLabel.toUpperCase() : 'NET WORTH'}
+      </text>
+      <text x={CX} y={CY + 9} textAnchor="middle" fill={centerColor}
+        fontSize={14} fontWeight={700} className="blur-private"
+        style={{ userSelect: 'none', transition: 'fill .18s' }}>
+        {centerAmt}
+      </text>
+      {hov && (
+        <text x={CX} y={CY + 26} textAnchor="middle" fill={hov.color}
+          fontSize={10} fontWeight={600} style={{ userSelect: 'none' }}>
+          {hov.typeIcon} {hov.name}
+        </text>
+      )}
+    </svg>
+  )
+}
 
 function last6Months() {
   const months = []
@@ -236,49 +301,7 @@ export default function Analytics({ transactions, accounts = [] }) {
               borderRadius: 'var(--radius)',
               padding: '20px 16px',
             }}>
-              <ResponsiveContainer width="100%" height={210}>
-                <PieChart>
-                  <Pie
-                    data={patrimonyData}
-                    cx="50%" cy="50%"
-                    innerRadius={62} outerRadius={92}
-                    paddingAngle={2} dataKey="value"
-                    strokeWidth={0}
-                  >
-                    {patrimonyData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                    <Label
-                      content={({ viewBox: { cx, cy } }) => (
-                        <g>
-                          <text x={cx} y={cy - 9} textAnchor="middle" fill="#6b6b65" fontSize={9} fontWeight={700} letterSpacing={1.5}>
-                            NET WORTH
-                          </text>
-                          <text x={cx} y={cy + 13} textAnchor="middle" fill={netWorth >= 0 ? '#f5f5f0' : '#f87171'} fontSize={15} fontWeight={700}>
-                            {netWorth < 0 ? '−' : ''}{formatCurrency(Math.abs(netWorth), baseCurrency)}
-                          </text>
-                        </g>
-                      )}
-                      position="center"
-                    />
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.length) return null
-                      const d = payload[0].payload
-                      return (
-                        <div style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
-                          <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 2 }}>{d.typeIcon} {d.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 6 }}>{d.typeLabel}</div>
-                          <div style={{ color: d.isAsset ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
-                            {d.isAsset ? '' : '−'}{formatCurrency(d.value, baseCurrency)}
-                          </div>
-                        </div>
-                      )
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <PatrimonyDonut data={patrimonyData} netWorth={netWorth} baseCurrency={baseCurrency} />
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
                 <div>
