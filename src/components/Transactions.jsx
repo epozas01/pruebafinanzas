@@ -34,7 +34,7 @@ export default function Transactions({ transactions, onDelete }) {
   const [search, setSearch] = useState('')
 
   const shown = useMemo(() => {
-    let list = [...transactions].sort((a, b) => b.id - a.id)
+    let list = [...transactions].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
 
     if (filter === 'income')  list = list.filter(t => t.type === 'income')
     else if (filter === 'expense') list = list.filter(t => t.type === 'expense')

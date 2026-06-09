@@ -1,11 +1,10 @@
 import { useState, useMemo } from 'react'
-import { EXPENSE_CATEGORIES } from '../data/categories'
+import { EXPENSE_CATEGORIES, CATEGORY_COLORS } from '../data/categories'
 import { formatCurrency, isoMonth } from '../utils/format'
-import { useLocalStorage } from '../hooks/useLocalStorage'
-import { CATEGORY_COLORS } from '../data/categories'
+import { useBudget } from '../hooks/useBudget'
 
-export default function Budget({ transactions }) {
-  const [budgets, setBudgets] = useLocalStorage('pulse_budgets', {})
+export default function Budget({ transactions, uid }) {
+  const { budgets, setBudgetLimit } = useBudget(uid)
   const [editing, setEditing] = useState(null)
   const [editVal, setEditVal] = useState('')
   const month = isoMonth()
@@ -18,9 +17,9 @@ export default function Budget({ transactions }) {
     return map
   }, [transactions, month])
 
-  function saveEdit(catId) {
+  async function saveEdit(catId) {
     const val = parseFloat(editVal)
-    if (val > 0) setBudgets({ ...budgets, [catId]: val })
+    if (val > 0) await setBudgetLimit(catId, val)
     setEditing(null)
     setEditVal('')
   }
@@ -29,44 +28,36 @@ export default function Budget({ transactions }) {
     <>
       <div className="sec-head">
         <div className="sec-title">Monthly Budget</div>
-        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{new Date().toLocaleString('default', { month: 'long' })}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+          {new Date().toLocaleString('default', { month: 'long' })}
+        </div>
       </div>
 
       {EXPENSE_CATEGORIES.map(cat => {
-        const limit   = budgets[cat.id] || 0
-        const spent   = spending[cat.id] || 0
-        const pct     = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0
-        const left    = limit - spent
-        const over    = spent > limit && limit > 0
-        const color   = over ? 'var(--red)' : pct > 75 ? '#f59e0b' : CATEGORY_COLORS[cat.id] || 'var(--gold)'
+        const limit     = budgets[cat.id] || 0
+        const spent     = spending[cat.id] || 0
+        const pct       = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0
+        const left      = limit - spent
+        const over      = spent > limit && limit > 0
+        const color     = over ? 'var(--red)' : pct > 75 ? '#f59e0b' : CATEGORY_COLORS[cat.id] || 'var(--gold)'
         const isEditing = editing === cat.id
 
         return (
           <div className="budget-item" key={cat.id}>
             <div className="budget-top">
-              <div className="budget-cat">
-                {cat.icon} {cat.label}
-              </div>
+              <div className="budget-cat">{cat.icon} {cat.label}</div>
               <div className="budget-numbers">
                 {isEditing ? (
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={editVal}
+                      type="number" min="1" step="1" value={editVal}
                       onChange={e => setEditVal(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveEdit(cat.id); if (e.key === 'Escape') setEditing(null) }}
                       autoFocus
                       style={{
-                        width: 90,
-                        padding: '4px 8px',
-                        background: 'var(--bg-elev)',
-                        border: '1px solid var(--gold)',
-                        borderRadius: 8,
-                        color: 'var(--text)',
-                        fontSize: 13,
-                        fontWeight: 700,
+                        width: 90, padding: '4px 8px', background: 'var(--bg-elev)',
+                        border: '1px solid var(--gold)', borderRadius: 8,
+                        color: 'var(--text)', fontSize: 13, fontWeight: 700,
                       }}
                     />
                     <button
@@ -104,15 +95,18 @@ export default function Budget({ transactions }) {
               />
             </div>
 
-            {limit > 0 && (
+            {limit > 0 ? (
               <div className={`budget-left blur-private ${over ? 'over' : ''}`}>
                 {over
                   ? `⚠️ Over budget by ${formatCurrency(Math.abs(left))}`
                   : `${formatCurrency(left)} remaining`}
               </div>
-            )}
-            {limit === 0 && (
-              <div className="budget-left" style={{ cursor: 'pointer' }} onClick={() => { setEditing(cat.id); setEditVal('') }}>
+            ) : (
+              <div
+                className="budget-left"
+                style={{ cursor: 'pointer' }}
+                onClick={() => { setEditing(cat.id); setEditVal('') }}
+              >
                 Tap amount to set a budget limit
               </div>
             )}

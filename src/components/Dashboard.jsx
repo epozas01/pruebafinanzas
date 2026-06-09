@@ -37,7 +37,7 @@ export default function Dashboard({ transactions, onDelete, onShowAll }) {
       .filter(t => t.type === 'expense' && t.date.startsWith(month))
       .reduce((s, t) => s + t.amount, 0)
 
-    const sorted = [...transactions].sort((a, b) => b.id - a.id).slice(0, 5)
+    const sorted = [...transactions].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5)
 
     return { balance: income - expense, monthIncome: mInc, monthExpense: mExp, recent: sorted }
   }, [transactions, month])
