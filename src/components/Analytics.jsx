@@ -8,7 +8,6 @@ import { formatCurrency, isoMonth } from '../utils/format'
 import { useExchangeRates } from '../hooks/useExchangeRates'
 import { ACCOUNT_TYPES } from '../data/currencies'
 
-// Custom SVG donut — no external deps, full style control
 function polar(cx, cy, r, deg) {
   const rad = ((deg - 90) * Math.PI) / 180
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
@@ -16,15 +15,16 @@ function polar(cx, cy, r, deg) {
 
 function PatrimonyDonut({ data, netWorth, baseCurrency }) {
   const [hovered, setHovered] = useState(null)
-  const SIZE = 220, CX = 110, CY = 110, OR = 90, IR = 60
+  const SIZE = 220, CX = 110, CY = 110, OR = 90, IR = 66
   const total = data.reduce((s, d) => s + d.value, 0)
   if (!total) return null
 
-  const gap = data.length > 1 ? 2.5 : 0
+  const gap = data.length > 1 ? 3 : 0
   let cum = 0
-  const slices = data.map((d, i) => {
+  const slices = data.map(d => {
     const sweep = (d.value / total) * 360
     const s0 = cum + gap / 2, s1 = cum + sweep - gap / 2
+    const mid = cum + sweep / 2
     cum += sweep
     const [ox0, oy0] = polar(CX, CY, OR, s0)
     const [ox1, oy1] = polar(CX, CY, OR, s1)
@@ -32,43 +32,72 @@ function PatrimonyDonut({ data, netWorth, baseCurrency }) {
     const [ix1, iy1] = polar(CX, CY, IR, s1)
     const lg = sweep - gap > 180 ? 1 : 0
     const path = `M${ox0},${oy0}A${OR},${OR},0,${lg},1,${ox1},${oy1}L${ix1},${iy1}A${IR},${IR},0,${lg},0,${ix0},${iy0}Z`
-    return { ...d, path }
+    const pct = (d.value / total) * 100
+    const [lx, ly] = polar(CX, CY, (OR + IR) / 2, mid)
+    return { ...d, path, pct, lx, ly }
   })
 
   const hov = hovered !== null ? slices[hovered] : null
-  const centerAmt = hov
-    ? `${hov.isAsset ? '' : '−'}${formatCurrency(hov.value, baseCurrency)}`
-    : `${netWorth < 0 ? '−' : ''}${formatCurrency(Math.abs(netWorth), baseCurrency)}`
-  const centerColor = hov ? hov.color : netWorth >= 0 ? '#f5f5f0' : '#f87171'
 
   return (
     <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
       style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
+      {/* Slices */}
       {slices.map((s, i) => (
         <path key={i} d={s.path} fill={s.color}
-          opacity={hovered === null || hovered === i ? 1 : 0.3}
-          style={{ cursor: 'pointer', transition: 'opacity .18s' }}
+          opacity={hovered === null || hovered === i ? 1 : 0.22}
+          style={{ cursor: 'pointer', transition: 'opacity .2s' }}
           onMouseEnter={() => setHovered(i)}
           onMouseLeave={() => setHovered(null)}
           onTouchStart={e => { e.preventDefault(); setHovered(i) }}
-          onTouchEnd={() => setTimeout(() => setHovered(null), 800)}
+          onTouchEnd={() => setTimeout(() => setHovered(null), 1200)}
         />
       ))}
-      <text x={CX} y={CY - 10} textAnchor="middle" fill="#5a5a54"
-        fontSize={8} fontWeight={700} style={{ letterSpacing: 2, userSelect: 'none' }}>
-        {hov ? hov.typeLabel.toUpperCase() : 'NET WORTH'}
-      </text>
-      <text x={CX} y={CY + 9} textAnchor="middle" fill={centerColor}
-        fontSize={14} fontWeight={700} className="blur-private"
-        style={{ userSelect: 'none', transition: 'fill .18s' }}>
-        {centerAmt}
-      </text>
-      {hov && (
-        <text x={CX} y={CY + 26} textAnchor="middle" fill={hov.color}
-          fontSize={10} fontWeight={600} style={{ userSelect: 'none' }}>
+
+      {/* Percentage labels on arcs ≥ 12% */}
+      {slices.map((s, i) => s.pct >= 12 && (
+        <text key={`p${i}`} x={s.lx} y={s.ly}
+          textAnchor="middle" dominantBaseline="middle"
+          fill="rgba(0,0,0,0.65)" fontSize={10} fontWeight={800}
+          style={{ userSelect: 'none', pointerEvents: 'none' }}>
+          {Math.round(s.pct)}%
+        </text>
+      ))}
+
+      {/* Center — default: net worth */}
+      {!hov && <>
+        <text x={CX} y={CY - 10} textAnchor="middle" fill="#5a5a54"
+          fontSize={8} fontWeight={700} style={{ letterSpacing: 2, userSelect: 'none' }}>
+          NET WORTH
+        </text>
+        <text x={CX} y={CY + 9} textAnchor="middle"
+          fill={netWorth >= 0 ? '#f0e8d0' : '#f87171'}
+          fontSize={15} fontWeight={700} className="blur-private"
+          style={{ userSelect: 'none' }}>
+          {netWorth < 0 ? '−' : ''}{formatCurrency(Math.abs(netWorth), baseCurrency)}
+        </text>
+      </>}
+
+      {/* Center — hover: account detail */}
+      {hov && <>
+        <text x={CX} y={CY - 22} textAnchor="middle" fill={hov.color}
+          fontSize={8} fontWeight={700} style={{ letterSpacing: 1.5, userSelect: 'none' }}>
+          {hov.typeLabel.toUpperCase()}
+        </text>
+        <text x={CX} y={CY - 5} textAnchor="middle" fill={hov.color}
+          fontSize={14} fontWeight={700} className="blur-private"
+          style={{ userSelect: 'none' }}>
+          {hov.isAsset ? '' : '−'}{formatCurrency(hov.value, baseCurrency)}
+        </text>
+        <text x={CX} y={CY + 11} textAnchor="middle" fill="#c0b898"
+          fontSize={10} style={{ userSelect: 'none' }}>
           {hov.typeIcon} {hov.name}
         </text>
-      )}
+        <text x={CX} y={CY + 25} textAnchor="middle" fill={hov.color}
+          fontSize={11} fontWeight={700} style={{ userSelect: 'none' }}>
+          {hov.pct.toFixed(1)}%
+        </text>
+      </>}
     </svg>
   )
 }
@@ -139,13 +168,13 @@ export default function Analytics({ transactions, accounts = [] }) {
   }, [transactions, selectedMonth])
 
   const TYPE_COLORS = {
-    checking:    '#60a5fa',
-    savings:     '#4ade80',
-    investment:  '#a78bfa',
-    cash:        '#34d399',
-    crypto:      '#f59e0b',
-    credit_card: '#f87171',
-    loan:        '#fb923c',
+    checking:    '#d4af37',  // app gold
+    savings:     '#34d399',  // emerald
+    investment:  '#f59e0b',  // amber — replaces cold purple
+    cash:        '#fde68a',  // light gold
+    crypto:      '#fb923c',  // orange
+    credit_card: '#f87171',  // coral red
+    loan:        '#e05252',  // deep red
   }
 
   const patrimonyData = useMemo(() => {
@@ -312,7 +341,12 @@ export default function Analytics({ transactions, accounts = [] }) {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.typeIcon} {d.name}</div>
                         <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{d.typeLabel}</div>
-                        <div className="blur-private" style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginTop: 1 }}>{formatCurrency(d.value, baseCurrency)}</div>
+                        <div className="blur-private" style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginTop: 1 }}>
+                          {formatCurrency(d.value, baseCurrency)}
+                          <span style={{ fontWeight: 400, color: 'var(--text-dim)', marginLeft: 5 }}>
+                            {((d.value / (totalAssets + totalLiab)) * 100).toFixed(0)}%
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -334,7 +368,12 @@ export default function Analytics({ transactions, accounts = [] }) {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.typeIcon} {d.name}</div>
                         <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{d.typeLabel}</div>
-                        <div className="blur-private" style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginTop: 1 }}>{'−'}{formatCurrency(d.value, baseCurrency)}</div>
+                        <div className="blur-private" style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', marginTop: 1 }}>
+                          {'−'}{formatCurrency(d.value, baseCurrency)}
+                          <span style={{ fontWeight: 400, color: 'var(--text-dim)', marginLeft: 5 }}>
+                            {((d.value / (totalAssets + totalLiab)) * 100).toFixed(0)}%
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
