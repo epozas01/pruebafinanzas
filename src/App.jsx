@@ -1,6 +1,8 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTransactions } from './hooks/useTransactions'
+import { useAccounts } from './hooks/useAccounts'
+import { useRecurring, nextOccurrence } from './hooks/useRecurring'
 import { useToast } from './components/Toast'
 import Toast from './components/Toast'
 import Auth from './components/Auth'
@@ -10,6 +12,7 @@ import Budget from './components/Budget'
 import Accounts from './components/Accounts'
 import Account from './components/Account'
 import TransactionForm from './components/TransactionForm'
+import Recurring from './components/Recurring'
 
 const Analytics = lazy(() => import('./components/Analytics'))
 
@@ -19,6 +22,7 @@ const TABS = [
   { id: 'transactions', label: 'Ledger',   icon: '≡'  },
   { id: 'budget',       label: 'Budget',   icon: '◎'  },
   { id: 'analytics',    label: 'Charts',   icon: '▲'  },
+  { id: 'recurring',    label: 'Repeat',   icon: '↻'  },
 ]
 
 function LoadingScreen() {
@@ -46,29 +50,73 @@ function LoadingScreen() {
 
 export default function App() {
   const user  = useAuth()
-  const [tab, setTab]              = useState('dashboard')
-  const [showForm, setShowForm]    = useState(false)
+  const [tab, setTab]               = useState('dashboard')
+  const [showForm, setShowForm]     = useState(false)
   const [showSettings, setSettings] = useState(false)
-  const [privacy, setPrivacy]      = useState(false)
-  const [toast, showToast]         = useToast()
+  const [privacy, setPrivacy]       = useState(false)
+  const [editingTx, setEditingTx]   = useState(null)
+  const [toast, showToast]          = useToast()
+  const autoPostedRef               = useRef(new Set())
 
-  const { transactions, loading: txLoading, addTransaction, deleteTransaction } =
+  const { transactions, loading: txLoading, addTransaction, deleteTransaction, updateTransaction } =
     useTransactions(user?.uid)
+
+  const { accounts } = useAccounts(user?.uid)
+
+  const { recurring, addRecurring, updateRecurring, deleteRecurring } = useRecurring(user?.uid)
+
+  // Auto-post due recurring transactions once per session
+  useEffect(() => {
+    if (!user?.uid || !recurring.length) return
+    const todayStr = new Date().toISOString().slice(0, 10)
+    recurring.forEach(async r => {
+      if (!r.active || !r.nextDate || r.nextDate > todayStr) return
+      if (autoPostedRef.current.has(r.id)) return
+      autoPostedRef.current.add(r.id)
+      await addTransaction({
+        type: r.type, amount: r.amount,
+        category: r.category || 'other',
+        accountId: r.accountId || '',
+        description: r.description || '',
+        date: r.nextDate,
+        notes: 'Auto-posted (recurring)',
+      })
+      let next = r.nextDate
+      while (next <= todayStr) next = nextOccurrence(next, r.frequency)
+      await updateRecurring(r.id, { nextDate: next })
+      showToast(`Auto-posted: ${r.description || 'Recurring transaction'}`)
+    })
+  }, [user?.uid, recurring])
 
   if (user === undefined) return <LoadingScreen />
   if (user === null)      return <Auth />
 
-  const hideNav = false
-  const hideFab = tab === 'accounts' // accounts tab has its own FAB
+  const hideFab = tab === 'accounts' || tab === 'recurring'
 
   async function handleSave(tx) {
-    await addTransaction(tx)
-    showToast(`${tx.type === 'income' ? 'Income' : 'Expense'} saved ✓`)
+    if (editingTx) {
+      await updateTransaction(editingTx.id, tx)
+      showToast('Transaction updated ✓')
+    } else {
+      await addTransaction(tx)
+      const label = tx.type === 'income' ? 'Income' : tx.type === 'transfer' ? 'Transfer' : 'Expense'
+      showToast(`${label} saved ✓`)
+    }
   }
 
   async function handleDelete(id) {
     await deleteTransaction(id)
     showToast('Transaction deleted')
+  }
+
+  function openEditTx(tx) {
+    setEditingTx(tx)
+    setShowForm(true)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingTx(null)
   }
 
   const initials = (user.displayName || user.email || '?').charAt(0).toUpperCase()
@@ -82,7 +130,6 @@ export default function App() {
           <button className="privacy-btn" onClick={() => setPrivacy(p => !p)}>
             {privacy ? '👁 Show' : '🙈 Hide'}
           </button>
-          {/* Avatar → opens settings sheet */}
           <button
             onClick={() => setSettings(true)}
             style={{
@@ -103,13 +150,13 @@ export default function App() {
       {tab === 'dashboard' && (
         txLoading
           ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-          : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('transactions')} />
+          : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('transactions')} onEdit={openEditTx} />
       )}
       {tab === 'accounts' && <Accounts uid={user.uid} transactions={transactions} />}
       {tab === 'transactions' && (
         txLoading
           ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-          : <Transactions transactions={transactions} onDelete={handleDelete} />
+          : <Transactions transactions={transactions} onDelete={handleDelete} onEdit={openEditTx} />
       )}
       {tab === 'budget' && (
         txLoading
@@ -120,12 +167,13 @@ export default function App() {
         <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading charts…</div>}>
           {txLoading
             ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-            : <Analytics transactions={transactions} />
+            : <Analytics transactions={transactions} accounts={accounts} />
           }
         </Suspense>
       )}
+      {tab === 'recurring' && <Recurring uid={user.uid} />}
 
-      {/* FAB — only on tabs that need it */}
+      {/* FAB */}
       {!hideFab && (
         <button className="fab" onClick={() => setShowForm(true)} title="Add transaction">+</button>
       )}
@@ -144,9 +192,9 @@ export default function App() {
         ))}
       </nav>
 
-      {/* Add transaction sheet */}
+      {/* Transaction form (add + edit) */}
       {showForm && (
-        <TransactionForm onSave={handleSave} onClose={() => setShowForm(false)} uid={user.uid} />
+        <TransactionForm initial={editingTx} onSave={handleSave} onClose={closeForm} uid={user.uid} />
       )}
 
       {/* Account settings sheet */}

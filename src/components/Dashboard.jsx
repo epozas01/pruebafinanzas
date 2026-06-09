@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { formatCurrency, formatDate, isoMonth } from '../utils/format'
 import { getCategoryMeta } from '../data/categories'
 
-function TxRow({ tx, onDelete }) {
+function TxRow({ tx, onDelete, onEdit }) {
   const isTransfer = tx.type === 'transfer'
   const meta = isTransfer ? null : getCategoryMeta(tx.category, tx.type)
   return (
@@ -22,12 +22,15 @@ function TxRow({ tx, onDelete }) {
         </div>
         <div className="tx-date">{formatDate(tx.date)}</div>
       </div>
-      <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
+      <div style={{ display: 'flex', gap: 2, flexShrink: 0, alignItems: 'center' }}>
+        {onEdit && <button className="tx-edit" onClick={() => onEdit(tx)} title="Edit">✎</button>}
+        <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
+      </div>
     </div>
   )
 }
 
-export default function Dashboard({ transactions, onDelete, onShowAll }) {
+export default function Dashboard({ transactions, onDelete, onShowAll, onEdit }) {
   const month = isoMonth()
 
   const { balance, monthIncome, monthExpense, recent } = useMemo(() => {
@@ -80,7 +83,7 @@ export default function Dashboard({ transactions, onDelete, onShowAll }) {
             <div className="empty-msg">No transactions yet.<br />Tap + to add your first one.</div>
           </div>
         ) : (
-          recent.map(tx => <TxRow key={tx.id} tx={tx} onDelete={onDelete} />)
+          recent.map(tx => <TxRow key={tx.id} tx={tx} onDelete={onDelete} onEdit={onEdit} />)
         )}
       </div>
     </>

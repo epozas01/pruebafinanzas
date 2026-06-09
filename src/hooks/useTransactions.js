@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  collection, onSnapshot, addDoc, deleteDoc,
+  collection, onSnapshot, addDoc, deleteDoc, updateDoc,
   doc, query, orderBy,
 } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -38,5 +38,10 @@ export function useTransactions(uid) {
     await deleteDoc(doc(db, `users/${uid}/transactions`, id))
   }
 
-  return { transactions, loading, addTransaction, deleteTransaction }
+  async function updateTransaction(id, data) {
+    const { id: _id, createdAt, ...rest } = data
+    await updateDoc(doc(db, `users/${uid}/transactions`, id), rest)
+  }
+
+  return { transactions, loading, addTransaction, deleteTransaction, updateTransaction }
 }

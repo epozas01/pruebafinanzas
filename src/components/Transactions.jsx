@@ -11,7 +11,7 @@ const ALL_CATS = [
   ...INCOME_CATEGORIES,
 ]
 
-function TxRow({ tx, onDelete }) {
+function TxRow({ tx, onDelete, onEdit }) {
   const isTransfer = tx.type === 'transfer'
   const meta = isTransfer ? null : getCategoryMeta(tx.category, tx.type)
   return (
@@ -30,12 +30,15 @@ function TxRow({ tx, onDelete }) {
           {!isTransfer && (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
         </div>
       </div>
-      <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
+      <div style={{ display: 'flex', gap: 2, flexShrink: 0, alignItems: 'center' }}>
+        {onEdit && <button className="tx-edit" onClick={() => onEdit(tx)} title="Edit">✎</button>}
+        <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
+      </div>
     </div>
   )
 }
 
-export default function Transactions({ transactions, onDelete }) {
+export default function Transactions({ transactions, onDelete, onEdit }) {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
 
@@ -96,7 +99,7 @@ export default function Transactions({ transactions, onDelete }) {
             <div className="empty-msg">No transactions found.</div>
           </div>
         ) : (
-          shown.map(tx => <TxRow key={tx.id} tx={tx} onDelete={onDelete} />)
+          shown.map(tx => <TxRow key={tx.id} tx={tx} onDelete={onDelete} onEdit={onEdit} />)
         )}
       </div>
     </>

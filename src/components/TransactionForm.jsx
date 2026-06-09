@@ -16,10 +16,20 @@ const empty = (type = 'expense') => ({
   notes: '',
 })
 
-export default function TransactionForm({ onSave, onClose, uid }) {
+export default function TransactionForm({ onSave, onClose, uid, initial }) {
   const { categories: expenseCategories } = useBudgetCategories(uid)
   const { accounts } = useAccounts(uid)
-  const [form, setForm] = useState(empty('expense'))
+  const [form, setForm] = useState(() => initial ? {
+    type: initial.type ?? 'expense',
+    amount: String(initial.amount ?? ''),
+    category: initial.category ?? 'food',
+    accountId: initial.accountId ?? '',
+    fromAccountId: initial.fromAccountId ?? '',
+    toAccountId: initial.toAccountId ?? '',
+    description: initial.description ?? '',
+    date: initial.date ?? today(),
+    notes: initial.notes ?? '',
+  } : empty('expense'))
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -57,7 +67,7 @@ export default function TransactionForm({ onSave, onClose, uid }) {
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="sheet">
         <div className="sheet-handle" />
-        <div className="sheet-title">New Transaction</div>
+        <div className="sheet-title">{initial ? 'Edit Transaction' : 'New Transaction'}</div>
 
         <div className="type-toggle">
           <button type="button" className={`type-btn expense ${form.type === 'expense' ? 'active' : ''}`} onClick={() => switchType('expense')}>
@@ -145,7 +155,7 @@ export default function TransactionForm({ onSave, onClose, uid }) {
             <textarea rows={2} placeholder="Any extra details…" value={form.notes} onChange={set('notes')} style={{ resize: 'none' }} />
           </div>
 
-          <button className="save-btn" type="submit">Save Transaction</button>
+          <button className="save-btn" type="submit">{initial ? 'Save Changes' : 'Save Transaction'}</button>
         </form>
       </div>
     </div>
