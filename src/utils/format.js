@@ -1,7 +1,12 @@
-export function formatCurrency(n, currency = 'USD') {
+export function getCurrency() {
+  try { return localStorage.getItem('pulse_currency') || 'USD' } catch { return 'USD' }
+}
+
+export function formatCurrency(n, currency) {
+  const c = currency || getCurrency()
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: c,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(n)
