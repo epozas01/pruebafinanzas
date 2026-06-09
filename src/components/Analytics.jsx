@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { pie as d3Pie, arc as d3Arc } from 'd3'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -8,96 +9,79 @@ import { formatCurrency, isoMonth } from '../utils/format'
 import { useExchangeRates } from '../hooks/useExchangeRates'
 import { ACCOUNT_TYPES } from '../data/currencies'
 
-function polar(cx, cy, r, deg) {
-  const rad = ((deg - 90) * Math.PI) / 180
-  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
-}
-
 function PatrimonyDonut({ data, netWorth, baseCurrency }) {
   const [hovered, setHovered] = useState(null)
   const SIZE = 220, CX = 110, CY = 110, OR = 90, IR = 66
   const total = data.reduce((s, d) => s + d.value, 0)
   if (!total) return null
 
-  const gap = data.length > 1 ? 3 : 0
-  let cum = 0
-  const slices = data.map(d => {
-    const sweep = (d.value / total) * 360
-    const s0 = cum + gap / 2, s1 = cum + sweep - gap / 2
-    const mid = cum + sweep / 2
-    cum += sweep
-    const [ox0, oy0] = polar(CX, CY, OR, s0)
-    const [ox1, oy1] = polar(CX, CY, OR, s1)
-    const [ix0, iy0] = polar(CX, CY, IR, s0)
-    const [ix1, iy1] = polar(CX, CY, IR, s1)
-    const lg = sweep - gap > 180 ? 1 : 0
-    const path = `M${ox0},${oy0}A${OR},${OR},0,${lg},1,${ox1},${oy1}L${ix1},${iy1}A${IR},${IR},0,${lg},0,${ix0},${iy0}Z`
-    const pct = (d.value / total) * 100
-    const [lx, ly] = polar(CX, CY, (OR + IR) / 2, mid)
-    return { ...d, path, pct, lx, ly }
-  })
-
-  const hov = hovered !== null ? slices[hovered] : null
+  const pieGen  = d3Pie().value(d => d.value).padAngle(data.length > 1 ? 0.05 : 0).sort(null)
+  const arcPath = d3Arc().innerRadius(IR).outerRadius(OR).cornerRadius(5)
+  const arcMid  = d3Arc().innerRadius((OR + IR) / 2).outerRadius((OR + IR) / 2)
+  const arcs = pieGen(data)
+  const hov  = hovered !== null ? arcs[hovered]?.data : null
 
   return (
     <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
-      style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
-      {/* Slices */}
-      {slices.map((s, i) => (
-        <path key={i} d={s.path} fill={s.color}
-          opacity={hovered === null || hovered === i ? 1 : 0.22}
-          style={{ cursor: 'pointer', transition: 'opacity .2s' }}
-          onMouseEnter={() => setHovered(i)}
-          onMouseLeave={() => setHovered(null)}
-          onTouchStart={e => { e.preventDefault(); setHovered(i) }}
-          onTouchEnd={() => setTimeout(() => setHovered(null), 1200)}
-        />
-      ))}
+      style={{ display: 'block', margin: '0 auto' }}>
+      <g transform={`translate(${CX},${CY})`}>
+        {arcs.map((a, i) => {
+          const pct = (a.data.value / total) * 100
+          const [lx, ly] = arcMid.centroid(a)
+          return (
+            <g key={i}>
+              <path d={arcPath(a)} fill={a.data.color}
+                opacity={hovered === null || hovered === i ? 1 : 0.2}
+                style={{ cursor: 'pointer', transition: 'opacity .2s' }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                onTouchStart={e => { e.preventDefault(); setHovered(i) }}
+                onTouchEnd={() => setTimeout(() => setHovered(null), 1200)}
+              />
+              {pct >= 12 && (
+                <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+                  fill="rgba(0,0,0,0.65)" fontSize={10} fontWeight={800}
+                  style={{ userSelect: 'none', pointerEvents: 'none' }}>
+                  {Math.round(pct)}%
+                </text>
+              )}
+            </g>
+          )
+        })}
 
-      {/* Percentage labels on arcs ≥ 12% */}
-      {slices.map((s, i) => s.pct >= 12 && (
-        <text key={`p${i}`} x={s.lx} y={s.ly}
-          textAnchor="middle" dominantBaseline="middle"
-          fill="rgba(0,0,0,0.65)" fontSize={10} fontWeight={800}
-          style={{ userSelect: 'none', pointerEvents: 'none' }}>
-          {Math.round(s.pct)}%
-        </text>
-      ))}
+        {!hov && <>
+          <text y={-10} textAnchor="middle" fill="#5a5a54"
+            fontSize={8} fontWeight={700} style={{ letterSpacing: 2, userSelect: 'none' }}>
+            NET WORTH
+          </text>
+          <text y={9} textAnchor="middle"
+            fill={netWorth >= 0 ? '#f0e8d0' : '#f87171'}
+            fontSize={15} fontWeight={700} className="blur-private"
+            style={{ userSelect: 'none' }}>
+            {netWorth < 0 ? '−' : ''}{formatCurrency(Math.abs(netWorth), baseCurrency)}
+          </text>
+        </>}
 
-      {/* Center — default: net worth */}
-      {!hov && <>
-        <text x={CX} y={CY - 10} textAnchor="middle" fill="#5a5a54"
-          fontSize={8} fontWeight={700} style={{ letterSpacing: 2, userSelect: 'none' }}>
-          NET WORTH
-        </text>
-        <text x={CX} y={CY + 9} textAnchor="middle"
-          fill={netWorth >= 0 ? '#f0e8d0' : '#f87171'}
-          fontSize={15} fontWeight={700} className="blur-private"
-          style={{ userSelect: 'none' }}>
-          {netWorth < 0 ? '−' : ''}{formatCurrency(Math.abs(netWorth), baseCurrency)}
-        </text>
-      </>}
-
-      {/* Center — hover: account detail */}
-      {hov && <>
-        <text x={CX} y={CY - 22} textAnchor="middle" fill={hov.color}
-          fontSize={8} fontWeight={700} style={{ letterSpacing: 1.5, userSelect: 'none' }}>
-          {hov.typeLabel.toUpperCase()}
-        </text>
-        <text x={CX} y={CY - 5} textAnchor="middle" fill={hov.color}
-          fontSize={14} fontWeight={700} className="blur-private"
-          style={{ userSelect: 'none' }}>
-          {hov.isAsset ? '' : '−'}{formatCurrency(hov.value, baseCurrency)}
-        </text>
-        <text x={CX} y={CY + 11} textAnchor="middle" fill="#c0b898"
-          fontSize={10} style={{ userSelect: 'none' }}>
-          {hov.typeIcon} {hov.name}
-        </text>
-        <text x={CX} y={CY + 25} textAnchor="middle" fill={hov.color}
-          fontSize={11} fontWeight={700} style={{ userSelect: 'none' }}>
-          {hov.pct.toFixed(1)}%
-        </text>
-      </>}
+        {hov && <>
+          <text y={-22} textAnchor="middle" fill={hov.color}
+            fontSize={8} fontWeight={700} style={{ letterSpacing: 1.5, userSelect: 'none' }}>
+            {hov.typeLabel.toUpperCase()}
+          </text>
+          <text y={-5} textAnchor="middle" fill={hov.color}
+            fontSize={14} fontWeight={700} className="blur-private"
+            style={{ userSelect: 'none' }}>
+            {hov.isAsset ? '' : '−'}{formatCurrency(hov.value, baseCurrency)}
+          </text>
+          <text y={11} textAnchor="middle" fill="#c0b898"
+            fontSize={10} style={{ userSelect: 'none' }}>
+            {hov.typeIcon} {hov.name}
+          </text>
+          <text y={26} textAnchor="middle" fill={hov.color}
+            fontSize={11} fontWeight={700} style={{ userSelect: 'none' }}>
+            {((hov.value / total) * 100).toFixed(1)}%
+          </text>
+        </>}
+      </g>
     </svg>
   )
 }
