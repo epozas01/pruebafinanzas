@@ -14,7 +14,8 @@ import Account from './components/Account'
 import TransactionForm from './components/TransactionForm'
 import Recurring from './components/Recurring'
 
-const Analytics = lazy(() => import('./components/Analytics'))
+const Analytics  = lazy(() => import('./components/Analytics'))
+const Portfolio  = lazy(() => import('./components/Portfolio'))
 
 const TABS = [
   { id: 'dashboard',    label: 'Home',     icon: '⌂' },
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'budget',       label: 'Budget',   icon: '◎'  },
   { id: 'analytics',    label: 'Charts',   icon: '▲'  },
   { id: 'recurring',    label: 'Repeat',   icon: '↻'  },
+  { id: 'portfolio',    label: 'Stocks',   icon: '📈' },
 ]
 
 function LoadingScreen() {
@@ -91,7 +93,7 @@ export default function App() {
   if (user === undefined) return <LoadingScreen />
   if (user === null)      return <Auth />
 
-  const hideFab = tab === 'accounts' || tab === 'recurring'
+  const hideFab = tab === 'accounts' || tab === 'recurring' || tab === 'portfolio'
 
   async function handleSave(tx) {
     if (editingTx) {
@@ -172,6 +174,11 @@ export default function App() {
         </Suspense>
       )}
       {tab === 'recurring' && <Recurring uid={user.uid} />}
+      {tab === 'portfolio' && (
+        <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading…</div>}>
+          <Portfolio uid={user.uid} />
+        </Suspense>
+      )}
 
       {/* FAB */}
       {!hideFab && (
