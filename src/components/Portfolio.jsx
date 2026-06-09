@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { pie as d3Pie, arc as d3Arc } from 'd3'
 import { formatCurrency } from '../utils/format'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { useFinnhub, fetchQuote, fetchProfile, fetchSearch } from '../hooks/useFinnhub'
+import { useFinnhub, fetchQuote, fetchYahooQuote, fetchSearch } from '../hooks/useFinnhub'
 
 const COLORS = [
   '#d4af37', '#34d399', '#fb923c', '#a78bfa',
@@ -88,10 +88,7 @@ function HoldingForm({ initial, onSave, onClose }) {
         const data = await fetchSearch(ticker)
         setSuggestions(
           (data.result || [])
-            .filter(r =>
-              (r.type === 'Common Stock' || r.type === 'ETP' || r.type === 'ADR') &&
-              !r.displaySymbol.includes('.')   // exclude foreign-listed symbols (e.g. AAPL.LON)
-            )
+            .filter(r => r.type === 'Common Stock' || r.type === 'ETP' || r.type === 'ADR')
             .slice(0, 6)
         )
         setShowSugg(true)
@@ -108,8 +105,9 @@ function HoldingForm({ initial, onSave, onClose }) {
     setTickerErr('')
     setPriceWarn('')
     try {
-      const q = await fetchQuote(item.displaySymbol)
-      if (!q?.c) setPriceWarn('Live price unavailable for this ticker on the free plan — you can still save it.')
+      const sym = item.displaySymbol
+      const q   = sym.includes('.') ? await fetchYahooQuote(sym) : await fetchQuote(sym)
+      if (!q?.c) setPriceWarn('Live price unavailable for this ticker — you can still save it.')
     } catch { /* ignore */ }
   }
 
