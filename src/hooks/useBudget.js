@@ -7,9 +7,11 @@ export function useBudget(uid) {
 
   useEffect(() => {
     if (!uid) return
-    return onSnapshot(doc(db, `users/${uid}/settings/budget`), snap => {
-      if (snap.exists()) setBudgets(snap.data())
-    })
+    return onSnapshot(
+      doc(db, `users/${uid}/settings/budget`),
+      snap => { if (snap.exists()) setBudgets(snap.data()) },
+      err => console.error('Firestore budget error:', err.code, err.message),
+    )
   }, [uid])
 
   async function setBudgetLimit(categoryId, amount) {

@@ -15,10 +15,16 @@ export function useTransactions(uid) {
       collection(db, `users/${uid}/transactions`),
       orderBy('createdAt', 'desc'),
     )
-    return onSnapshot(q, snap => {
-      setTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id })))
-      setLoading(false)
-    })
+    return onSnapshot(q,
+      snap => {
+        setTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id })))
+        setLoading(false)
+      },
+      err => {
+        console.error('Firestore transactions error:', err.code, err.message)
+        setLoading(false)
+      },
+    )
   }, [uid])
 
   async function addTransaction(tx) {
