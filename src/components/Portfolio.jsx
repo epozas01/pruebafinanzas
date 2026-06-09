@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { pie as d3Pie, arc as d3Arc } from 'd3'
 import { formatCurrency } from '../utils/format'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { useFinnhub, fetchQuote, fetchYahooQuote, fetchSearch } from '../hooks/useFinnhub'
+import { useFinnhub, fetchSearch, validateTicker } from '../hooks/useFinnhub'
 
 const COLORS = [
   '#d4af37', '#34d399', '#fb923c', '#a78bfa',
@@ -105,9 +105,8 @@ function HoldingForm({ initial, onSave, onClose }) {
     setTickerErr('')
     setPriceWarn('')
     try {
-      const sym = item.displaySymbol
-      const q   = sym.includes('.') ? await fetchYahooQuote(sym) : await fetchQuote(sym)
-      if (!q?.c) setPriceWarn('Live price unavailable for this ticker — you can still save it.')
+      const price = await validateTicker(item.displaySymbol)
+      if (!price) setPriceWarn('Live price unavailable for this ticker — you can still save it.')
     } catch { /* ignore */ }
   }
 
