@@ -75,6 +75,7 @@ function HoldingForm({ initial, onSave, onClose }) {
   const [buyPrice,    setBuyPrice]    = useState(initial?.purchasePrice ?? '')
   const [name,        setName]        = useState(initial?.name          ?? '')
   const [tickerErr,   setTickerErr]   = useState('')
+  const [priceWarn,   setPriceWarn]   = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSugg,    setShowSugg]    = useState(false)
 
@@ -87,7 +88,10 @@ function HoldingForm({ initial, onSave, onClose }) {
         const data = await fetchSearch(ticker)
         setSuggestions(
           (data.result || [])
-            .filter(r => r.type === 'Common Stock' || r.type === 'ETP' || r.type === 'ADR')
+            .filter(r =>
+              (r.type === 'Common Stock' || r.type === 'ETP' || r.type === 'ADR') &&
+              !r.displaySymbol.includes('.')   // exclude foreign-listed symbols (e.g. AAPL.LON)
+            )
             .slice(0, 6)
         )
         setShowSugg(true)
@@ -96,12 +100,17 @@ function HoldingForm({ initial, onSave, onClose }) {
     return () => clearTimeout(t)
   }, [ticker]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function pickSuggestion(item) {
+  async function pickSuggestion(item) {
     setTicker(item.displaySymbol)
     setName(item.description)
     setSuggestions([])
     setShowSugg(false)
     setTickerErr('')
+    setPriceWarn('')
+    try {
+      const q = await fetchQuote(item.displaySymbol)
+      if (!q?.c) setPriceWarn('Live price unavailable for this ticker on the free plan — you can still save it.')
+    } catch { /* ignore */ }
   }
 
   function submit(e) {
@@ -172,7 +181,8 @@ function HoldingForm({ initial, onSave, onClose }) {
               </div>
             )}
 
-            {tickerErr && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{tickerErr}</div>}
+            {tickerErr  && <div style={{ fontSize: 11, color: 'var(--red)',    marginTop: 4 }}>{tickerErr}</div>}
+            {priceWarn  && <div style={{ fontSize: 11, color: '#f59e0b',       marginTop: 4 }}>⚠ {priceWarn}</div>}
             {name && !tickerErr && <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>✓ {name}</div>}
           </div>
 
@@ -257,7 +267,7 @@ function HoldingCard({ holding, onEdit, onDelete }) {
             {formatCurrency(totalValue)}
           </div>
         ) : (
-          <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>—</div>
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>Price N/A</div>
         )}
         {gainLoss != null && (
           <div className="blur-private" style={{ fontSize: 11, color: gainLoss >= 0 ? 'var(--green)' : 'var(--red)', marginTop: 2, fontWeight: 600 }}>
@@ -306,8 +316,8 @@ export default function Portfolio({ uid }) {
   const enriched = useMemo(() => {
     return holdings.map((h, i) => {
       const q              = quotes[h.ticker]
-      const price          = q?.c  ?? null
-      const dailyChangePct = q?.dp ?? null
+      const price          = q?.c  || null   // treat 0 as no data
+      const dailyChangePct = q?.c  ? (q?.dp ?? null) : null
       const totalValue     = price != null ? price * h.shares : null
       const gainLoss       = h.purchasePrice != null && price != null
         ? (price - h.purchasePrice) * h.shares : null
