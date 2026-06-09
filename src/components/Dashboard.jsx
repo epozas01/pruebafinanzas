@@ -3,17 +3,22 @@ import { formatCurrency, formatDate, isoMonth } from '../utils/format'
 import { getCategoryMeta } from '../data/categories'
 
 function TxRow({ tx, onDelete }) {
-  const meta = getCategoryMeta(tx.category, tx.type)
+  const isTransfer = tx.type === 'transfer'
+  const meta = isTransfer ? null : getCategoryMeta(tx.category, tx.type)
   return (
     <div className="tx-item">
-      <div className={`tx-icon ${tx.type}`}>{meta.icon}</div>
+      <div className={`tx-icon ${tx.type}`}>{isTransfer ? '⇄' : meta.icon}</div>
       <div className="tx-info">
-        <div className="tx-desc">{tx.description || meta.label}</div>
-        <div className="tx-meta">{meta.label}</div>
+        <div className="tx-desc">{tx.description || (isTransfer ? 'Transfer' : meta.label)}</div>
+        <div className="tx-meta">
+          {isTransfer
+            ? `${tx.fromAccountName || '—'} → ${tx.toAccountName || '—'}`
+            : meta.label}
+        </div>
       </div>
       <div className="tx-right">
         <div className={`tx-amt ${tx.type}`}>
-          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+          {!isTransfer && (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
         </div>
         <div className="tx-date">{formatDate(tx.date)}</div>
       </div>
@@ -37,7 +42,7 @@ export default function Dashboard({ transactions, onDelete, onShowAll }) {
       .filter(t => t.type === 'expense' && t.date.startsWith(month))
       .reduce((s, t) => s + t.amount, 0)
 
-    const sorted = [...transactions].sort((a, b) => b.id - a.id).slice(0, 5)
+    const sorted = [...transactions].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5)
 
     return { balance: income - expense, monthIncome: mInc, monthExpense: mExp, recent: sorted }
   }, [transactions, month])

@@ -232,6 +232,7 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 }
 .tx-icon.income { background: rgba(74,222,128,0.1); }
 .tx-icon.expense { background: rgba(248,113,113,0.1); }
+.tx-icon.transfer { background: rgba(96,165,250,0.1); }
 .tx-info { flex: 1; min-width: 0; }
 .tx-desc { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
@@ -239,6 +240,7 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 .tx-amt { font-size: 15px; font-weight: 700; }
 .tx-amt.income { color: var(--green); }
 .tx-amt.expense { color: var(--red); }
+.tx-amt.transfer { color: var(--blue); }
 .tx-date { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 
 /* ── Delete button on tx ── */
@@ -332,8 +334,9 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   letter-spacing: 0.08em;
   transition: all .2s;
 }
-.type-btn.income.active  { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.4); color: var(--green); }
-.type-btn.expense.active { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.4); color: var(--red); }
+.type-btn.income.active   { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.4); color: var(--green); }
+.type-btn.expense.active  { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.4); color: var(--red); }
+.type-btn.transfer.active { background: rgba(96,165,250,0.12); border-color: rgba(96,165,250,0.4); color: var(--blue); }
 
 /* ── Form fields ── */
 .field { margin-bottom: 16px; }

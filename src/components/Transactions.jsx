@@ -3,25 +3,31 @@ import { formatCurrency, formatDate } from '../utils/format'
 import { getCategoryMeta, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../data/categories'
 
 const ALL_CATS = [
-  { id: 'all', label: 'All', icon: '' },
-  { id: 'income', label: 'Income', icon: '↓' },
-  { id: 'expense', label: 'Expenses', icon: '↑' },
+  { id: 'all',      label: 'All',       icon: ''  },
+  { id: 'income',   label: 'Income',    icon: '↓' },
+  { id: 'expense',  label: 'Expenses',  icon: '↑' },
+  { id: 'transfer', label: 'Transfers', icon: '⇄' },
   ...EXPENSE_CATEGORIES,
   ...INCOME_CATEGORIES,
 ]
 
 function TxRow({ tx, onDelete }) {
-  const meta = getCategoryMeta(tx.category, tx.type)
+  const isTransfer = tx.type === 'transfer'
+  const meta = isTransfer ? null : getCategoryMeta(tx.category, tx.type)
   return (
     <div className="tx-item">
-      <div className={`tx-icon ${tx.type}`}>{meta.icon}</div>
+      <div className={`tx-icon ${tx.type}`}>{isTransfer ? '⇄' : meta.icon}</div>
       <div className="tx-info">
-        <div className="tx-desc">{tx.description || meta.label}</div>
-        <div className="tx-meta">{meta.label} · {formatDate(tx.date)}</div>
+        <div className="tx-desc">{tx.description || (isTransfer ? 'Transfer' : meta.label)}</div>
+        <div className="tx-meta">
+          {isTransfer
+            ? `${tx.fromAccountName || '—'} → ${tx.toAccountName || '—'} · ${formatDate(tx.date)}`
+            : `${meta.label} · ${formatDate(tx.date)}`}
+        </div>
       </div>
       <div className="tx-right">
         <div className={`tx-amt ${tx.type} blur-private`}>
-          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+          {!isTransfer && (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
         </div>
       </div>
       <button className="tx-delete" onClick={() => onDelete(tx.id)} title="Delete">✕</button>
@@ -34,10 +40,11 @@ export default function Transactions({ transactions, onDelete }) {
   const [search, setSearch] = useState('')
 
   const shown = useMemo(() => {
-    let list = [...transactions].sort((a, b) => b.id - a.id)
+    let list = [...transactions].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
 
-    if (filter === 'income')  list = list.filter(t => t.type === 'income')
-    else if (filter === 'expense') list = list.filter(t => t.type === 'expense')
+    if (filter === 'income')   list = list.filter(t => t.type === 'income')
+    else if (filter === 'expense')  list = list.filter(t => t.type === 'expense')
+    else if (filter === 'transfer') list = list.filter(t => t.type === 'transfer')
     else if (filter !== 'all') list = list.filter(t => t.category === filter)
 
     if (search.trim()) {

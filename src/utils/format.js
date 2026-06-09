@@ -1,5 +1,8 @@
 export function getCurrency() {
-  try { return localStorage.getItem('pulse_currency') || 'USD' } catch { return 'USD' }
+  try {
+    const raw = localStorage.getItem('pulse_currency')
+    return raw ? JSON.parse(raw) : 'USD'
+  } catch { return 'USD' }
 }
 
 export function formatCurrency(n, currency) {
