@@ -11,18 +11,22 @@ import { auth } from '../firebase'
 const googleProvider = new GoogleAuthProvider()
 
 const ERROR_MAP = {
-  'auth/email-already-in-use':  'That email is already registered. Try signing in.',
-  'auth/user-not-found':        'No account found with that email.',
-  'auth/wrong-password':        'Incorrect password.',
-  'auth/invalid-credential':    'Incorrect email or password.',
-  'auth/invalid-email':         'Please enter a valid email address.',
-  'auth/weak-password':         'Password must be at least 6 characters.',
-  'auth/network-request-failed':'Network error — check your connection.',
-  'auth/too-many-requests':     'Too many attempts. Please try again later.',
+  'auth/email-already-in-use':   'That email is already registered. Try signing in.',
+  'auth/user-not-found':         'No account found with that email.',
+  'auth/wrong-password':         'Incorrect password.',
+  'auth/invalid-credential':     'Incorrect email or password.',
+  'auth/invalid-email':          'Please enter a valid email address.',
+  'auth/weak-password':          'Password must be at least 6 characters.',
+  'auth/network-request-failed': 'Network error — check your connection.',
+  'auth/too-many-requests':      'Too many attempts. Please try again later.',
+  'auth/operation-not-allowed':  'Google sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → Google → Enable.',
+  'auth/unauthorized-domain':    'This domain is not authorized. Go to Firebase Console → Authentication → Settings → Authorized domains and add this site\'s URL.',
+  'auth/popup-blocked':          'Popup was blocked by your browser. Please allow popups for this site and try again.',
+  'auth/cancelled-popup-request':'Sign-in cancelled.',
 }
 
 function friendlyError(code) {
-  return ERROR_MAP[code] || 'Something went wrong. Please try again.'
+  return ERROR_MAP[code] || `Sign-in failed (${code}). Check Firebase Console → Authentication.`
 }
 
 export default function Auth() {
