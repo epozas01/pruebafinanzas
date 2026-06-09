@@ -311,16 +311,33 @@ export default function Analytics({ transactions, accounts = [] }) {
         <div className="sec-title">Analytics</div>
       </div>
 
-      <div className="month-row">
-        {months.map(m => (
-          <button
-            key={m}
-            className={`month-pill ${selectedMonth === m ? 'active' : ''}`}
-            onClick={() => setSelectedMonth(m)}
-          >
-            {monthLabel(m)} {new Date(m + '-01').getFullYear()}
-          </button>
-        ))}
+      <div style={{ padding: '0 16px 16px' }}>
+        <select
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '11px 16px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            color: 'var(--text)',
+            fontSize: '14px',
+            fontWeight: 600,
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d4af37' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C%2Fsvg%3E\")",
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 16px center',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          {months.map(m => (
+            <option key={m} value={m} style={{ background: '#1a1a1a' }}>
+              {monthLabel(m)} {new Date(m + '-01').getFullYear()}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px 16px' }}>
