@@ -12,19 +12,7 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { useLocalStorage } from '../hooks/useLocalStorage'
-
-const CURRENCIES = [
-  { code: 'USD', label: 'US Dollar ($)' },
-  { code: 'EUR', label: 'Euro (€)' },
-  { code: 'GBP', label: 'British Pound (£)' },
-  { code: 'JPY', label: 'Japanese Yen (¥)' },
-  { code: 'CAD', label: 'Canadian Dollar (C$)' },
-  { code: 'AUD', label: 'Australian Dollar (A$)' },
-  { code: 'MXN', label: 'Mexican Peso (MX$)' },
-  { code: 'BRL', label: 'Brazilian Real (R$)' },
-  { code: 'COP', label: 'Colombian Peso (COP)' },
-  { code: 'CLP', label: 'Chilean Peso (CLP)' },
-]
+import { CURRENCIES } from '../data/currencies'
 
 function Section({ title, children }) {
   return (
@@ -73,7 +61,7 @@ const smallBtn = (color = 'var(--gold)') => ({
   fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
 })
 
-export default function Account({ user, onToast }) {
+export default function Account({ user, onToast, onClose }) {
   const [currency, setCurrency] = useLocalStorage('pulse_currency', 'USD')
 
   // Name editing
@@ -136,8 +124,14 @@ export default function Account({ user, onToast }) {
 
   return (
     <>
+      {/* Close row */}
+      {onClose && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 0' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        </div>
+      )}
       {/* Header */}
-      <div style={{ padding: '28px 20px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ padding: onClose ? '12px 20px 20px' : '28px 20px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{
           width: 58, height: 58, borderRadius: '50%',
           background: 'linear-gradient(135deg, #f4cf5f, #a08020)',
