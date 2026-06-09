@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { pie as d3Pie, arc as d3Arc } from 'd3'
 import { formatCurrency } from '../utils/format'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { useFinnhub, fetchQuote, fetchProfile } from '../hooks/useFinnhub'
+import { useFinnhub, fetchQuote, fetchProfile, fetchSearch } from '../hooks/useFinnhub'
 
 const COLORS = [
   '#d4af37', '#34d399', '#fb923c', '#a78bfa',
@@ -70,34 +70,38 @@ function AllocationDonut({ data, total }) {
 
 // ─── Holding form ────────────────────────────────────────────────────────────
 function HoldingForm({ initial, onSave, onClose }) {
-  const [ticker,    setTicker]    = useState(initial?.ticker        ?? '')
-  const [shares,    setShares]    = useState(initial?.shares        ?? '')
-  const [buyPrice,  setBuyPrice]  = useState(initial?.purchasePrice ?? '')
-  const [name,      setName]      = useState(initial?.name          ?? '')
-  const [looking,   setLooking]   = useState(false)
-  const [tickerErr, setTickerErr] = useState('')
+  const [ticker,      setTicker]      = useState(initial?.ticker        ?? '')
+  const [shares,      setShares]      = useState(initial?.shares        ?? '')
+  const [buyPrice,    setBuyPrice]    = useState(initial?.purchasePrice ?? '')
+  const [name,        setName]        = useState(initial?.name          ?? '')
+  const [tickerErr,   setTickerErr]   = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [showSugg,    setShowSugg]    = useState(false)
 
-  async function lookup() {
-    const sym = ticker.trim().toUpperCase()
-    if (!sym) return
-    setTicker(sym)
-    setLooking(true)
+  // Debounced search as user types
+  useEffect(() => {
+    if (ticker.length < 1) { setSuggestions([]); return }
+    if (name) return  // already resolved — don't re-search
+    const t = setTimeout(async () => {
+      try {
+        const data = await fetchSearch(ticker)
+        setSuggestions(
+          (data.result || [])
+            .filter(r => r.type === 'Common Stock' || r.type === 'ETP' || r.type === 'ADR')
+            .slice(0, 6)
+        )
+        setShowSugg(true)
+      } catch { /* ignore */ }
+    }, 280)
+    return () => clearTimeout(t)
+  }, [ticker]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function pickSuggestion(item) {
+    setTicker(item.displaySymbol)
+    setName(item.description)
+    setSuggestions([])
+    setShowSugg(false)
     setTickerErr('')
-    setName('')
-    try {
-      const [quote, profile] = await Promise.all([fetchQuote(sym), fetchProfile(sym)])
-      if (profile?.name) {
-        setName(profile.name)
-      } else if (!quote?.c || quote.c === 0) {
-        setTickerErr('Ticker not found — check the symbol.')
-      } else {
-        setName(sym)
-      }
-    } catch {
-      setTickerErr('Could not look up ticker.')
-    } finally {
-      setLooking(false)
-    }
   }
 
   function submit(e) {
@@ -120,25 +124,56 @@ function HoldingForm({ initial, onSave, onClose }) {
         <div className="sheet-title">{initial ? 'Edit Holding' : 'Add Holding'}</div>
 
         <form onSubmit={submit}>
-          <div className="field">
+          <div className="field" style={{ position: 'relative' }}>
             <label className="field-label">Ticker Symbol</label>
             <input
               type="text"
-              placeholder="e.g. AAPL, TSLA, MSFT"
+              placeholder="e.g. AAPL, TSLA, MSFT…"
               value={ticker}
-              onChange={e => { setTicker(e.target.value.toUpperCase()); setName(''); setTickerErr('') }}
-              onBlur={lookup}
+              onChange={e => {
+                setTicker(e.target.value.toUpperCase())
+                setName('')
+                setTickerErr('')
+              }}
+              onBlur={() => setTimeout(() => setShowSugg(false), 150)}
+              onFocus={() => suggestions.length && setShowSugg(true)}
               autoFocus
+              autoComplete="off"
             />
-            {looking && (
-              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>Looking up…</div>
+
+            {/* Autocomplete dropdown */}
+            {showSugg && suggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% - 4px)', left: 0, right: 0,
+                background: '#161614', border: '1px solid var(--border-strong)',
+                borderTop: 'none', borderRadius: '0 0 12px 12px',
+                zIndex: 300, overflow: 'hidden',
+              }}>
+                {suggestions.map((item, i) => (
+                  <div
+                    key={i}
+                    onMouseDown={e => { e.preventDefault(); pickSuggestion(item) }}
+                    style={{
+                      padding: '10px 14px', cursor: 'pointer', display: 'flex',
+                      alignItems: 'baseline', gap: 10,
+                      borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--gold)', minWidth: 52 }}>
+                      {item.displaySymbol}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.description}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
-            {tickerErr && (
-              <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{tickerErr}</div>
-            )}
-            {name && !tickerErr && (
-              <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>✓ {name}</div>
-            )}
+
+            {tickerErr && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{tickerErr}</div>}
+            {name && !tickerErr && <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>✓ {name}</div>}
           </div>
 
           <div className="row2">

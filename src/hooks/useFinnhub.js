@@ -13,6 +13,11 @@ export async function fetchProfile(ticker) {
   return res.json()
 }
 
+export async function fetchSearch(query) {
+  const res = await fetch(`${BASE}/search?q=${encodeURIComponent(query)}&token=${KEY}`)
+  return res.json()
+}
+
 export function useFinnhub(tickers) {
   const [quotes, setQuotes]   = useState({})
   const [loading, setLoading] = useState(false)
