@@ -70,10 +70,11 @@ function AllocationDonut({ data, total }) {
 
 // ─── 7-day portfolio chart (D3) ──────────────────────────────────────────────
 function PortfolioChart({ data }) {
+  const [hover, setHover] = useState(null)
   if (!data?.length || data.length < 2) return null
 
-  const W = 340, H = 130
-  const margin = { top: 8, right: 8, bottom: 24, left: 58 }
+  const W = 340, H = 140
+  const margin = { top: 12, right: 8, bottom: 24, left: 58 }
   const iW = W - margin.left - margin.right
   const iH = H - margin.top  - margin.bottom
 
@@ -83,7 +84,7 @@ function PortfolioChart({ data }) {
 
   const minV = Math.min(...values)
   const maxV = Math.max(...values)
-  const pad  = (maxV - minV) * 0.12 || maxV * 0.05
+  const pad  = (maxV - minV) * 0.15 || maxV * 0.05
 
   const xScale = scaleLinear().domain([0, data.length - 1]).range([0, iW])
   const yScale = scaleLinear().domain([minV - pad, maxV + pad]).range([iH, 0])
@@ -113,19 +114,46 @@ function PortfolioChart({ data }) {
     return `$${v.toFixed(0)}`
   }
 
+  function onMouseMove(e) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const mx = (e.clientX - rect.left) * (W / rect.width) - margin.left
+    const i  = Math.max(0, Math.min(data.length - 1, Math.round(mx / iW * (data.length - 1))))
+    setHover(i)
+  }
+  function onTouchMove(e) {
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const mx = (e.touches[0].clientX - rect.left) * (W / rect.width) - margin.left
+    const i  = Math.max(0, Math.min(data.length - 1, Math.round(mx / iW * (data.length - 1))))
+    setHover(i)
+  }
+
+  const hx     = hover !== null ? xScale(hover) : null
+  const hy     = hover !== null ? yScale(values[hover]) : null
+  const TW = 96, TH = 38
+  const tipFlip = hover !== null && hx > iW / 2
+  const tipX    = tipFlip ? hx - TW - 8 : hx + 8
+  const tipY    = hover !== null ? Math.max(2, Math.min(iH - TH, hy - TH / 2)) : 0
+
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+    <svg
+      width="100%" viewBox={`0 0 ${W} ${H}`}
+      style={{ display: 'block', overflow: 'visible', cursor: 'crosshair' }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={() => setHover(null)}
+      onTouchMove={onTouchMove}
+      onTouchEnd={() => setHover(null)}
+    >
       <defs>
         <linearGradient id="pchart-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={color} stopOpacity={0.18} />
-          <stop offset="100%" stopColor={color} stopOpacity={0}    />
+          <stop offset="0%"   stopColor={color} stopOpacity={0.2} />
+          <stop offset="100%" stopColor={color} stopOpacity={0}   />
         </linearGradient>
       </defs>
       <g transform={`translate(${margin.left},${margin.top})`}>
         {/* Grid lines */}
         {yTicks.map((v, i) => (
-          <line key={i}
-            x1={0} y1={yScale(v)} x2={iW} y2={yScale(v)}
+          <line key={i} x1={0} y1={yScale(v)} x2={iW} y2={yScale(v)}
             stroke="rgba(255,255,255,0.05)" strokeDasharray="3,3" />
         ))}
 
@@ -136,10 +164,11 @@ function PortfolioChart({ data }) {
         <path d={linePath} fill="none" stroke={color} strokeWidth={1.5}
           strokeLinejoin="round" strokeLinecap="round" />
 
-        {/* End dot */}
-        <circle
-          cx={xScale(data.length - 1)} cy={yScale(values[values.length - 1])}
-          r={3} fill={color} />
+        {/* End dot — hidden while hovering */}
+        {hover === null && (
+          <circle cx={xScale(data.length - 1)} cy={yScale(values[values.length - 1])}
+            r={3} fill={color} />
+        )}
 
         {/* Y axis labels */}
         {yTicks.map((v, i) => (
@@ -154,11 +183,41 @@ function PortfolioChart({ data }) {
         {xTickIs.map(i => (
           <text key={i} x={xScale(i)} y={iH + 16}
             textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}
-            fontSize={9} fill="var(--text-dim)"
+            fontSize={9}
+            fill={hover === i ? color : 'var(--text-dim)'}
+            fontWeight={hover === i ? 700 : 400}
             style={{ userSelect: 'none' }}>
             {fmtDate(data[i].date)}
           </text>
         ))}
+
+        {/* Hover overlay */}
+        {hover !== null && (
+          <g style={{ pointerEvents: 'none' }}>
+            {/* Vertical crosshair */}
+            <line x1={hx} y1={0} x2={hx} y2={iH}
+              stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+
+            {/* Dot snapped to line */}
+            <circle cx={hx} cy={hy} r={4} fill={color}
+              stroke="#0a0a0a" strokeWidth={1.5} />
+
+            {/* Tooltip box */}
+            <rect x={tipX} y={tipY} width={TW} height={TH}
+              rx={6} fill="#1c1a10"
+              stroke="rgba(212,175,55,0.3)" strokeWidth={1} />
+            <text x={tipX + TW / 2} y={tipY + 13}
+              textAnchor="middle" fontSize={9} fill="#9a9580"
+              style={{ userSelect: 'none' }}>
+              {fmtDate(data[hover].date)}
+            </text>
+            <text x={tipX + TW / 2} y={tipY + 28}
+              textAnchor="middle" fontSize={11} fontWeight={700} fill={color}
+              style={{ userSelect: 'none' }}>
+              {fmtY(values[hover])}
+            </text>
+          </g>
+        )}
       </g>
     </svg>
   )
@@ -438,14 +497,21 @@ export default function Portfolio({ uid }) {
         dateSet.add(new Date(pt.date).toISOString().slice(0, 10))
       })
     })
+    if (!dateSet.size) return []
     return [...dateSet].sort().map(dateStr => {
       let total = 0
       enriched.forEach(h => {
         const pts = history[h.ticker] || []
-        const pt  = [...pts].reverse().find(p =>
-          new Date(p.date).toISOString().slice(0, 10) <= dateStr
-        )
-        if (pt) total += pt.price * h.shares
+        if (pts.length > 0) {
+          // Carry-forward: use most recent price on or before this date
+          const pt = [...pts].reverse().find(p =>
+            new Date(p.date).toISOString().slice(0, 10) <= dateStr
+          )
+          if (pt) total += pt.price * h.shares
+        } else if (h.price != null) {
+          // History unavailable — use today's live price as a constant
+          total += h.price * h.shares
+        }
       })
       return total > 0 ? { date: dateStr, value: total } : null
     }).filter(Boolean)
