@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitLog – Gym Workout Tracker</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --green: #3ecf8e;
+      --text: #e8eaf0;
+      --muted: #8890aa;
+      --border: #2a2e42;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .app { max-width: 900px; margin: 0 auto; padding: 0 16px 80px; }
+
+    /* ── Header ── */
+    .header {
+      padding: 28px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-icon { font-size: 32px; }
+    .header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .header span { color: var(--accent); }
+    .header p { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      background: var(--surface);
+      padding: 6px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    select option { background: var(--surface2); }
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 11px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #5a52e0; transform: translateY(-1px); }
+    .btn-danger { background: transparent; border: 1px solid #ff4d6d; color: #ff4d6d; padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+    .btn-danger:hover { background: #ff4d6d; color: #fff; }
+    .btn-green { background: var(--green); color: #0f1117; }
+    .btn-green:hover { background: #30b87a; }
+
+    /* ── Workout Log ── */
+    .log-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .log-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .log-name { font-weight: 700; font-size: 15px; }
+    .tag {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 4px;
+      margin-top: 4px;
+    }
+    .tag-purple { background: #2d2b5e; color: #a89ef5; }
+    .tag-green  { background: #0d3327; color: var(--green); }
+    .tag-pink   { background: #3d1a2a; color: #ff8fab; }
+    .tag-orange { background: #3a2000; color: #ffaa4d; }
+
+    /* ── Stats ── */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-num { font-size: 28px; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+
+    /* ── Recommended ── */
+    .workout-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .workout-card-header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      gap: 12px;
+    }
+    .workout-card-header:hover { background: rgba(108,99,255,.07); }
+    .workout-card-title { font-weight: 700; font-size: 16px; }
+    .workout-card-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .workout-card-badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .chevron { transition: transform .25s; font-size: 18px; color: var(--muted); }
+    .chevron.open { transform: rotate(180deg); }
+    .exercise-list { padding: 0 20px 16px; }
+    .exercise-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .exercise-row:last-child { border-bottom: none; }
+    .ex-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .ex-name { font-weight: 600; font-size: 14px; }
+    .ex-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .ex-right { margin-left: auto; text-align: right; }
+    .ex-duration { font-weight: 700; color: var(--green); font-size: 13px; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty-icon { font-size: 52px; margin-bottom: 12px; }
+    .empty p { font-size: 15px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--green);
+      color: #0f1117;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform .3s ease;
+      z-index: 999;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Difficulty dots ── */
+    .diff { display: flex; gap: 3px; align-items: center; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+    .dot.filled { background: var(--accent2); }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .filter-chip:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── Data ───────────────────────────────────────────────────────────────────
+
+const CATEGORIES = ['All', 'Full Body', 'Core', 'Upper Body', 'Lower Body', 'HIIT', 'Flexibility'];
+
+const RECOMMENDED = [
+  {
+    id: 1,
+    title: 'Morning Full-Body Blast',
+    category: 'Full Body',
+    difficulty: 2,
+    desc: 'Perfect energizing routine to kickstart any day.',
+    exercises: [
+      { name: 'Warm-up Marching', detail: 'March in place, high knees', duration: '2 min' },
+      { name: 'Jumping Jacks', detail: '3 sets × 30 reps', duration: '3 min' },
+      { name: 'Push-Ups', detail: '3 sets × 12 reps — modify on knees if needed', duration: '4 min' },
+      { name: 'Bodyweight Squats', detail: '3 sets × 15 reps', duration: '4 min' },
+      { name: 'Mountain Climbers', detail: '3 sets × 20 reps each leg', duration: '4 min' },
+      { name: 'Glute Bridges', detail: '3 sets × 15 reps', duration: '3 min' },
+      { name: 'Plank Hold', detail: '3 sets × 30 sec', duration: '3 min' },
+      { name: 'Superman Hold', detail: '3 sets × 10 reps', duration: '3 min' },
+      { name: 'Cool-down Stretch', detail: 'Hip flexors, chest, hamstrings', duration: '4 min' },
+    ],
+  },
+  {
+    id: 2,
+    title: 'Core Crusher',
+    category: 'Core',
+    difficulty: 2,
+    desc: 'Build a strong, stable core with zero equipment.',
+    exercises: [
+      { name: 'Dead Bug', detail: '3 sets × 8 reps each side', duration: '4 min' },
+      { name: 'Bicycle Crunches', detail: '3 sets × 20 reps', duration: '3 min' },
+      { name: 'Plank', detail: '4 sets × 30–45 sec', duration: '4 min' },
+      { name: 'Side Plank', detail: '3 sets × 20 sec each side', duration: '3 min' },
+      { name: 'Reverse Crunches', detail: '3 sets × 15 reps', duration: '3 min' },
+      { name: 'Leg Raises', detail: '3 sets × 12 reps', duration: '3 min' },
+      { name: 'Russian Twists', detail: '3 sets × 20 reps', duration: '3 min' },
+      { name: 'Flutter Kicks', detail: '3 sets × 20 sec', duration: '3 min' },
+      { name: 'Stretch & breathe', detail: 'Child's pose, cat-cow', duration: '4 min' },
+    ],
+  },
+  {
+    id: 3,
+    title: 'HIIT Cardio Burn',
+    category: 'HIIT',
+    difficulty: 3,
+    desc: '30-second work / 15-second rest intervals. Max effort.',
+    exercises: [
+      { name: 'Warm-up Jog', detail: 'Jog in place, arm circles', duration: '2 min' },
+      { name: 'Burpees', detail: '30 sec on / 15 sec rest × 3', duration: '4.5 min' },
+      { name: 'High Knees', detail: '30 sec on / 15 sec rest × 3', duration: '4.5 min' },
+      { name: 'Jump Squats', detail: '30 sec on / 15 sec rest × 3', duration: '4.5 min' },
+      { name: 'Push-Up to Plank', detail: '30 sec on / 15 sec rest × 3', duration: '4.5 min' },
+      { name: 'Speed Skaters', detail: '30 sec on / 15 sec rest × 2', duration: '3 min' },
+      { name: 'Cool-down Walk', detail: 'Slow pace, deep breaths', duration: '2 min' },
+      { name: 'Full Body Stretch', detail: 'Quads, calves, chest, shoulders', duration: '5 min' },
+    ],
+  },
+  {
+    id: 4,
+    title: 'Upper Body Strength',
+    category: 'Upper Body',
+    difficulty: 2,
+    desc: 'Build chest, back, shoulders, and arms with bodyweight.',
+    exercises: [
+      { name: 'Arm Circles & Shoulder Rolls', detail: 'Warm-up', duration: '2 min' },
+      { name: 'Standard Push-Ups', detail: '4 sets × 10–15 reps', duration: '5 min' },
+      { name: 'Wide Push-Ups', detail: '3 sets × 10 reps — targets chest', duration: '4 min' },
+      { name: 'Tricep Dips (chair)', detail: '3 sets × 12 reps', duration: '4 min' },
+      { name: 'Diamond Push-Ups', detail: '3 sets × 8 reps', duration: '4 min' },
+      { name: 'Pike Push-Ups', detail: '3 sets × 10 reps — targets shoulders', duration: '4 min' },
+      { name: 'Inchworm', detail: '3 sets × 6 reps', duration: '4 min' },
+      { name: 'Cool-down stretch', detail: 'Chest opener, cross-arm, child's pose', duration: '3 min' },
+    ],
+  },
+  {
+    id: 5,
+    title: 'Leg Day (No Equipment)',
+    category: 'Lower Body',
+    difficulty: 2,
+    desc: 'Quads, hamstrings, glutes, and calves – all bodyweight.',
+    exercises: [
+      { name: 'Leg Swings', detail: 'Front/back & side — warm-up', duration: '2 min' },
+      { name: 'Bodyweight Squats', detail: '4 sets × 15 reps', duration: '5 min' },
+      { name: 'Reverse Lunges', detail: '3 sets × 12 reps each leg', duration: '5 min' },
+      { name: 'Sumo Squats', detail: '3 sets × 12 reps', duration: '4 min' },
+      { name: 'Glute Bridges', detail: '3 sets × 15 reps', duration: '3 min' },
+      { name: 'Single-Leg Glute Bridge', detail: '3 sets × 10 reps each', duration: '3 min' },
+      { name: 'Calf Raises', detail: '3 sets × 20 reps', duration: '3 min' },
+      { name: 'Wall Sit', detail: '3 sets × 30 sec', duration: '3 min' },
+      { name: 'Hip Flexor & Quad Stretch', detail: 'Cool-down', duration: '2 min' },
+    ],
+  },
+  {
+    id: 6,
+    title: 'Flexibility & Recovery',
+    category: 'Flexibility',
+    difficulty: 1,
+    desc: 'Gentle mobility flow – great as a rest-day active recovery.',
+    exercises: [
+      { name: 'Cat-Cow', detail: '10 slow reps', duration: '2 min' },
+      { name: 'Child's Pose', detail: 'Hold 45 sec × 2', duration: '2 min' },
+      { name: 'Downward Dog', detail: 'Hold 30 sec, pedal feet', duration: '3 min' },
+      { name: 'Hip Flexor Lunge Stretch', detail: '45 sec each side × 2', duration: '4 min' },
+      { name: 'Seated Hamstring Stretch', detail: '45 sec each side × 2', duration: '4 min' },
+      { name: 'Pigeon Pose', detail: '1 min each side', duration: '4 min' },
+      { name: 'Thread the Needle', detail: '30 sec each side × 2', duration: '3 min' },
+      { name: 'Supine Twist', detail: '45 sec each side', duration: '3 min' },
+      { name: 'Savasana / Deep Breathing', detail: 'Relax fully', duration: '5 min' },
+    ],
+  },
+];
+
+const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Core', 'Legs', 'Glutes', 'Full Body', 'Cardio'];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function useLocalStorage(key, initial) {
+  const [val, setVal] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial; }
+    catch { return initial; }
+  });
+  const set = v => { setVal(v); try { localStorage.setItem(key, JSON.stringify(v)); } catch {} };
+  return [val, set];
+}
+
+// ─── Components ──────────────────────────────────────────────────────────────
+
+function DifficultyDots({ level }) {
+  return (
+    <div className="diff">
+      {[1,2,3].map(i => <div key={i} className={`dot ${i <= level ? 'filled' : ''}`} />)}
+    </div>
+  );
+}
+
+function Toast({ msg, show }) {
+  return <div className={`toast ${show ? 'show' : ''}`}>{msg}</div>;
+}
+
+function StatsBar({ logs }) {
+  const total = logs.length;
+  const mins  = logs.reduce((s, l) => s + Number(l.duration || 0), 0);
+  const week  = (() => {
+    const now = new Date(); const mon = new Date(now);
+    mon.setDate(now.getDate() - now.getDay() + 1);
+    return logs.filter(l => new Date(l.date + 'T00:00:00') >= mon).length;
+  })();
+  return (
+    <div className="stats-row">
+      <div className="stat-card"><div className="stat-num">{total}</div><div className="stat-label">Total Workouts</div></div>
+      <div className="stat-card"><div className="stat-num">{mins}</div><div className="stat-label">Total Minutes</div></div>
+      <div className="stat-card"><div className="stat-num">{week}</div><div className="stat-label">This Week</div></div>
+    </div>
+  );
+}
+
+function LogForm({ onSave }) {
+  const empty = { date: today(), name: '', category: 'Full Body', duration: '30', sets: '', reps: '', notes: '' };
+  const [form, setForm] = useState(empty);
+  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  function submit(e) {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    onSave({ ...form, id: Date.now() });
+    setForm(empty);
+  }
+
+  return (
+    <div className="card">
+      <div className="card-title">💪 Log a Workout</div>
+      <form onSubmit={submit}>
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Exercise / Workout Name</label>
+            <input value={form.name} onChange={set('name')} placeholder="e.g. Push-Ups, HIIT, Squats…" required />
+          </div>
+          <div className="form-group">
+            <label>Date</label>
+            <input type="date" value={form.date} onChange={set('date')} />
+          </div>
+          <div className="form-group">
+            <label>Muscle Group / Category</label>
+            <select value={form.category} onChange={set('category')}>
+              {MUSCLE_GROUPS.map(g => <option key={g}>{g}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Duration (minutes)</label>
+            <input type="number" min="1" max="300" value={form.duration} onChange={set('duration')} placeholder="30" />
+          </div>
+          <div className="form-group">
+            <label>Sets</label>
+            <input type="number" min="1" value={form.sets} onChange={set('sets')} placeholder="e.g. 3" />
+          </div>
+          <div className="form-group">
+            <label>Reps</label>
+            <input type="number" min="1" value={form.reps} onChange={set('reps')} placeholder="e.g. 12" />
+          </div>
+          <div className="form-group full">
+            <label>Notes (optional)</label>
+            <textarea value={form.notes} onChange={set('notes')} placeholder="How did it feel? Any PRs?" />
+          </div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <button className="btn btn-primary" type="submit">Save Workout ✓</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function tagClass(cat) {
+  const map = { Chest:'tag-purple', Back:'tag-green', Shoulders:'tag-purple', Arms:'tag-orange',
+                Core:'tag-green', Legs:'tag-orange', Glutes:'tag-pink', 'Full Body':'tag-purple', Cardio:'tag-pink' };
+  return map[cat] || 'tag-purple';
+}
+
+function LogList({ logs, onDelete }) {
+  const [filter, setFilter] = useState('All');
+  const groups = ['All', ...MUSCLE_GROUPS];
+  const shown = filter === 'All' ? logs : logs.filter(l => l.category === filter);
+
+  return (
+    <div>
+      <div className="filter-bar">
+        {groups.map(g => (
+          <button key={g} className={`filter-chip ${filter === g ? 'active' : ''}`} onClick={() => setFilter(g)}>{g}</button>
+        ))}
+      </div>
+      {shown.length === 0
+        ? <div className="empty"><div className="empty-icon">🏋️</div><p>No workouts logged yet.<br/>Use the Log tab to add your first session!</p></div>
+        : [...shown].reverse().map(l => (
+            <div className="log-item" key={l.id}>
+              <div style={{ flex: 1 }}>
+                <div className="log-name">{l.name}</div>
+                <div className="log-meta">
+                  📅 {formatDate(l.date)}
+                  {l.duration ? ` · ⏱ ${l.duration} min` : ''}
+                  {l.sets && l.reps ? ` · ${l.sets} sets × ${l.reps} reps` : ''}
+                </div>
+                <div style={{ marginTop: 6 }}>
+                  <span className={`tag ${tagClass(l.category)}`}>{l.category}</span>
+                </div>
+                {l.notes && <div style={{ marginTop: 8, fontSize: 13, color: 'var(--muted)', fontStyle: 'italic' }}>"{l.notes}"</div>}
+              </div>
+              <button className="btn btn-danger" onClick={() => onDelete(l.id)}>✕</button>
+            </div>
+          ))
+      }
+    </div>
+  );
+}
+
+function RecommendedCard({ w }) {
+  const [open, setOpen] = useState(false);
+  const diffLabel = ['', 'Beginner', 'Intermediate', 'Advanced'][w.difficulty];
+  const catColor = {
+    'Full Body':'tag-purple', Core:'tag-green', HIIT:'tag-pink',
+    'Upper Body':'tag-purple', 'Lower Body':'tag-orange', Flexibility:'tag-green'
+  }[w.category] || 'tag-purple';
+
+  return (
+    <div className="workout-card">
+      <div className="workout-card-header" onClick={() => setOpen(o => !o)}>
+        <div style={{ flex: 1 }}>
+          <div className="workout-card-title">{w.title}</div>
+          <div className="workout-card-sub">
+            <span className={`tag ${catColor}`} style={{ marginRight: 8 }}>{w.category}</span>
+            {diffLabel} · {w.exercises.length} exercises
+          </div>
+          <div style={{ marginTop: 6, fontSize: 13, color: 'var(--muted)' }}>{w.desc}</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <div className="workout-card-badge">⏱ 30 min</div>
+          <DifficultyDots level={w.difficulty} />
+          <div className={`chevron ${open ? 'open' : ''}`}>▾</div>
+        </div>
+      </div>
+      {open && (
+        <div className="exercise-list">
+          {w.exercises.map((ex, i) => (
+            <div className="exercise-row" key={i}>
+              <div className="ex-num">{i + 1}</div>
+              <div>
+                <div className="ex-name">{ex.name}</div>
+                <div className="ex-detail">{ex.detail}</div>
+              </div>
+              <div className="ex-right">
+                <div className="ex-duration">{ex.duration}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecommendedTab() {
+  const [filter, setFilter] = useState('All');
+  const shown = filter === 'All' ? RECOMMENDED : RECOMMENDED.filter(w => w.category === filter);
+
+  return (
+    <div>
+      <div className="card" style={{ marginBottom: 20, background: 'linear-gradient(135deg,#1a1d27 0%,#22263a 100%)' }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div style={{ fontSize: 40 }}>🏃</div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 17 }}>30-Minute No-Equipment Workouts</div>
+            <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+              Science-backed routines you can do anywhere — no gym, no gear.
+              Tap a card to expand the full exercise plan.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="filter-bar">
+        {CATEGORIES.map(c => (
+          <button key={c} className={`filter-chip ${filter === c ? 'active' : ''}`} onClick={() => setFilter(c)}>{c}</button>
+        ))}
+      </div>
+      {shown.map(w => <RecommendedCard key={w.id} w={w} />)}
+    </div>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+function App() {
+  const [tab, setTab] = useState('log');
+  const [logs, setLogs] = useLocalStorage('fitlog_workouts', []);
+  const [toast, setToast] = useState({ msg: '', show: false });
+  const toastTimer = useRef(null);
+
+  function showToast(msg) {
+    clearTimeout(toastTimer.current);
+    setToast({ msg, show: true });
+    toastTimer.current = setTimeout(() => setToast(t => ({ ...t, show: false })), 2800);
+  }
+
+  function handleSave(entry) {
+    setLogs([...logs, entry]);
+    showToast('Workout saved! 🎉');
+    setTab('history');
+  }
+
+  function handleDelete(id) {
+    setLogs(logs.filter(l => l.id !== id));
+    showToast('Entry deleted.');
+  }
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div className="header-icon">🏋️</div>
+        <div>
+          <h1>Fit<span>Log</span></h1>
+          <p>Your personal workout tracker</p>
+        </div>
+      </div>
+
+      <div className="tabs">
+        <button className={`tab ${tab === 'log' ? 'active' : ''}`} onClick={() => setTab('log')}>➕ Log Workout</button>
+        <button className={`tab ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>📋 History {logs.length > 0 && `(${logs.length})`}</button>
+        <button className={`tab ${tab === 'recommended' ? 'active' : ''}`} onClick={() => setTab('recommended')}>⚡ Recommended</button>
+      </div>
+
+      {tab === 'log' && (
+        <>
+          <StatsBar logs={logs} />
+          <LogForm onSave={handleSave} />
+        </>
+      )}
+
+      {tab === 'history' && (
+        <>
+          <StatsBar logs={logs} />
+          <div className="card">
+            <div className="card-title">📋 Workout History</div>
+            <LogList logs={logs} onDelete={handleDelete} />
+          </div>
+        </>
+      )}
+
+      {tab === 'recommended' && <RecommendedTab />}
+
+      <Toast msg={toast.msg} show={toast.show} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
