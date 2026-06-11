@@ -79,6 +79,44 @@ export default function Account({ user, onToast, onClose }) {
   const [confirmClear, setConfirmClear]   = useState(false)
   const [clearing, setClearing]           = useState(false)
 
+  // CSV export
+  const [exporting, setExporting] = useState(false)
+
+  async function exportCSV() {
+    setExporting(true)
+    try {
+      const snap = await getDocs(collection(db, `users/${user.uid}/transactions`))
+      const rows = snap.docs.map(d => d.data())
+      if (!rows.length) { onToast('No transactions to export'); return }
+
+      rows.sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+      const esc = v => {
+        const s = String(v ?? '')
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+      }
+      const header = ['Date', 'Type', 'Category', 'Description', 'Amount', 'Notes']
+      const lines = [
+        header.join(','),
+        ...rows.map(t => [
+          esc(t.date), esc(t.type), esc(t.category),
+          esc(t.description), esc(t.amount), esc(t.notes),
+        ].join(',')),
+      ]
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `pulse-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      onToast(`Exported ${rows.length} transactions ✓`)
+    } catch {
+      onToast('Export failed — try again')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   async function saveName() {
     if (!newName.trim()) return
     await updateProfile(user, { displayName: newName.trim() })
@@ -190,6 +228,15 @@ export default function Account({ user, onToast, onClose }) {
           >
             {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
           </select>
+        </Row>
+      </Section>
+
+      {/* Data */}
+      <Section title="Data">
+        <Row label="Export Transactions" last>
+          <button style={smallBtn()} onClick={exportCSV} disabled={exporting}>
+            {exporting ? 'Exporting…' : '↓ CSV'}
+          </button>
         </Row>
       </Section>
 

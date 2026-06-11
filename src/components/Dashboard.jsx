@@ -15,6 +15,7 @@ function TxRow({ tx, onDelete, onEdit }) {
             ? `${tx.fromAccountName || '—'} → ${tx.toAccountName || '—'}`
             : meta.label}
         </div>
+        {tx.notes && <div className="tx-notes">{tx.notes}</div>}
       </div>
       <div className="tx-right">
         <div className={`tx-amt ${tx.type}`}>

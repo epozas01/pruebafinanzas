@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
-// Finnhub — search/autocomplete only
+// Finnhub — US quotes + search/autocomplete
 const FH_KEY  = 'd8k35vhr01qjgd6qs38gd8k35vhr01qjgd6qs390'
 const FH_BASE = 'https://finnhub.io/api/v1'
 
-// Twelve Data — all quotes (US + international)
+// Twelve Data — international quotes only
 const TD_KEY  = '388372fb14f54079837605980ccc1843'
 const TD_BASE = 'https://api.twelvedata.com'
 
@@ -18,8 +18,10 @@ const SUFFIX_MAP = {
   NS: 'NSE',  KS: 'KRX',   SS: 'SHH',  SZ: 'SHZ',
 }
 
+function isIntl(ticker) { return ticker.includes('.') }
+
 function toTD(ticker) {
-  if (!ticker.includes('.')) return ticker
+  if (!isIntl(ticker)) return ticker
   const dot      = ticker.lastIndexOf('.')
   const sym      = ticker.slice(0, dot)
   const suffix   = ticker.slice(dot + 1).toUpperCase()
@@ -27,7 +29,7 @@ function toTD(ticker) {
   return exchange ? `${sym}:${exchange}` : sym
 }
 
-function normalize(q) {
+function normalizeTD(q) {
   if (!q || q.status === 'error') return { c: 0, dp: 0 }
   const c  = parseFloat(q.close) || 0
   const dp = parseFloat(q.percent_change) || 0
@@ -42,10 +44,67 @@ export async function fetchSearch(query) {
 }
 
 export async function validateTicker(ticker) {
+  if (!isIntl(ticker)) {
+    const res  = await fetch(`${FH_BASE}/quote?symbol=${encodeURIComponent(ticker)}&token=${FH_KEY}`)
+    const data = await res.json()
+    return data.c ? data.c : null
+  }
   const sym = toTD(ticker)
-  const res = await fetch(`${TD_BASE}/price?symbol=${encodeURIComponent(sym)}&apikey=${TD_KEY}`)
+  const res  = await fetch(`${TD_BASE}/price?symbol=${encodeURIComponent(sym)}&apikey=${TD_KEY}`)
   const data = await res.json()
   return data.price ? parseFloat(data.price) : null
+}
+
+// ─── History fetch ───────────────────────────────────────────────────────────
+
+export async function fetchHistory(ticker) {
+  const to   = Math.floor(Date.now() / 1000)
+  const from = to - 10 * 24 * 60 * 60  // 10 days back → ensures ≥7 trading days
+
+  if (!isIntl(ticker)) {
+    const res  = await fetch(
+      `${FH_BASE}/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${from}&to=${to}&token=${FH_KEY}`
+    )
+    const data = await res.json()
+    if (data.s !== 'ok' || !data.c?.length) return []
+    return data.c.slice(-7).map((price, i, arr) => ({
+      date:  data.t[data.t.length - arr.length + i] * 1000,
+      price,
+    }))
+  } else {
+    const sym = toTD(ticker)
+    const res  = await fetch(
+      `${TD_BASE}/time_series?symbol=${encodeURIComponent(sym)}&interval=1day&outputsize=7&apikey=${TD_KEY}`
+    )
+    const data = await res.json()
+    if (data.status === 'error' || !data.values?.length) return []
+    return [...data.values].reverse().map(v => ({
+      date:  new Date(v.datetime).getTime(),
+      price: parseFloat(v.close),
+    }))
+  }
+}
+
+export function useHistoricalPrices(tickers) {
+  const [history,     setHistory]     = useState({})
+  const [histLoading, setHistLoading] = useState(false)
+  const key = tickers.join(',')
+
+  useEffect(() => {
+    if (!tickers.length) { setHistory({}); return }
+    setHistLoading(true)
+    Promise.all(
+      tickers.map(async t => {
+        try   { return [t, await fetchHistory(t)] }
+        catch { return [t, []] }
+      })
+    ).then(entries => {
+      setHistory(Object.fromEntries(entries))
+      setHistLoading(false)
+    })
+  }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { history, histLoading }
 }
 
 // ─── Quote hook ──────────────────────────────────────────────────────────────
@@ -60,31 +119,44 @@ export function useFinnhub(tickers) {
   useEffect(() => {
     if (!tickers.length) { setQuotes({}); return }
 
-    const tdSymbols = tickers.map(toTD)
+    const usTickers   = tickers.filter(t => !isIntl(t))
+    const intlTickers = tickers.filter(t =>  isIntl(t))
 
     async function fetchAll() {
       setLoading(true)
       setError(null)
-      try {
-        // Do NOT encodeURIComponent the full list — commas must stay as commas
-        const symbolParam = tdSymbols.join(',')
-        const res  = await fetch(`${TD_BASE}/quote?symbol=${symbolParam}&apikey=${TD_KEY}`)
-        const data = await res.json()
+      const result = {}
 
-        // Surface API-level errors (bad key, rate limit, etc.)
-        if (data.status === 'error') {
-          setError(data.message || 'Twelve Data API error')
-          setLoading(false)
-          return
+      try {
+        // US tickers — Finnhub (parallel individual requests)
+        if (usTickers.length) {
+          const entries = await Promise.all(
+            usTickers.map(async ticker => {
+              const res  = await fetch(`${FH_BASE}/quote?symbol=${encodeURIComponent(ticker)}&token=${FH_KEY}`)
+              const data = await res.json()
+              return [ticker, { c: data.c || 0, dp: data.dp || 0 }]
+            })
+          )
+          entries.forEach(([t, q]) => { result[t] = q })
         }
 
-        const result = {}
-        tickers.forEach((ticker, i) => {
-          // Single-ticker: data is the quote directly
-          // Multi-ticker: data is keyed by TD symbol
-          const q = tickers.length === 1 ? data : (data[tdSymbols[i]] ?? data[ticker])
-          result[ticker] = normalize(q)
-        })
+        // International tickers — Twelve Data (batched)
+        if (intlTickers.length) {
+          const tdSymbols   = intlTickers.map(toTD)
+          const symbolParam = tdSymbols.join(',')
+          const res  = await fetch(`${TD_BASE}/quote?symbol=${symbolParam}&apikey=${TD_KEY}`)
+          const data = await res.json()
+
+          if (data.status === 'error') {
+            setError(data.message || 'Twelve Data API error')
+          } else {
+            intlTickers.forEach((ticker, i) => {
+              const q = intlTickers.length === 1 ? data : (data[tdSymbols[i]] ?? data[ticker])
+              result[ticker] = normalizeTD(q)
+            })
+          }
+        }
+
         setQuotes(result)
       } catch {
         setError('Could not fetch live prices')
