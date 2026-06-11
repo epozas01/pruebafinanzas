@@ -31,6 +31,18 @@ const HOME_TABS = [
   { id: 'recurring', label: 'Repeat'   },
 ]
 
+function SkeletonList({ hero = false, rows = 4 }) {
+  return (
+    <>
+      {hero && <div className="skeleton skeleton-hero" />}
+      <div style={{ height: 20 }} />
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="skeleton skeleton-row" style={{ animationDelay: `${i * 0.08}s` }} />
+      ))}
+    </>
+  )
+}
+
 function LoadingScreen() {
   return (
     <div style={{
@@ -169,37 +181,45 @@ export default function App() {
             ))}
           </div>
 
-          {homeTab === 'overview' && (
-            txLoading
-              ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-              : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('ledger')} onEdit={openEditTx} />
-          )}
-          {homeTab === 'budget' && (
-            txLoading
-              ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-              : <Budget transactions={transactions} uid={user.uid} />
-          )}
-          {homeTab === 'analytics' && (
-            <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading charts…</div>}>
-              {txLoading
-                ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-                : <Analytics transactions={transactions} accounts={accounts} />
-              }
-            </Suspense>
-          )}
-          {homeTab === 'recurring' && <Recurring uid={user.uid} />}
+          <div className="page" key={homeTab}>
+            {homeTab === 'overview' && (
+              txLoading
+                ? <SkeletonList hero rows={3} />
+                : <Dashboard transactions={transactions} onDelete={handleDelete} onShowAll={() => setTab('ledger')} onEdit={openEditTx} />
+            )}
+            {homeTab === 'budget' && (
+              txLoading
+                ? <SkeletonList rows={4} />
+                : <Budget transactions={transactions} uid={user.uid} />
+            )}
+            {homeTab === 'analytics' && (
+              <Suspense fallback={<SkeletonList hero rows={2} />}>
+                {txLoading
+                  ? <SkeletonList hero rows={2} />
+                  : <Analytics transactions={transactions} accounts={accounts} />
+                }
+              </Suspense>
+            )}
+            {homeTab === 'recurring' && <Recurring uid={user.uid} />}
+          </div>
         </>
       )}
-      {tab === 'accounts' && <Accounts uid={user.uid} transactions={transactions} />}
+      {tab === 'accounts' && (
+        <div className="page"><Accounts uid={user.uid} transactions={transactions} /></div>
+      )}
       {tab === 'ledger' && (
-        txLoading
-          ? <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>Loading…</div>
-          : <Transactions transactions={transactions} onDelete={handleDelete} onEdit={openEditTx} />
+        <div className="page">
+          {txLoading
+            ? <SkeletonList rows={6} />
+            : <Transactions transactions={transactions} onDelete={handleDelete} onEdit={openEditTx} />}
+        </div>
       )}
       {tab === 'portfolio' && (
-        <Suspense fallback={<div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-dim)' }}>Loading…</div>}>
-          <Portfolio uid={user.uid} />
-        </Suspense>
+        <div className="page">
+          <Suspense fallback={<SkeletonList hero rows={3} />}>
+            <Portfolio uid={user.uid} />
+          </Suspense>
+        </div>
       )}
 
       {/* FAB */}

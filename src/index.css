@@ -140,9 +140,21 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   letter-spacing: 0.08em;
   padding: 6px 0;
   transition: color .2s;
+  position: relative;
 }
 .nav-item.active { color: var(--gold); }
-.nav-icon { font-size: 20px; line-height: 1; }
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px; height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, #f4cf5f, #d4af37);
+}
+.nav-icon { font-size: 20px; line-height: 1; transition: transform .2s; }
+.nav-item.active .nav-icon { transform: translateY(-1px) scale(1.08); }
 
 /* ── Cards ── */
 .card {
@@ -269,6 +281,15 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 .tx-info { flex: 1; min-width: 0; }
 .tx-desc { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.tx-notes {
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-top: 4px;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .tx-right { text-align: right; flex-shrink: 0; }
 .tx-amt { font-size: 15px; font-weight: 700; }
 .tx-amt.income { color: var(--green); }
@@ -583,3 +604,50 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+/* ── Page transitions ── */
+.page {
+  animation: pageIn .28s ease-out;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── List entrance ── */
+.tx-item, .budget-item {
+  animation: itemIn .25s ease-out backwards;
+}
+@keyframes itemIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Skeleton loading ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, #232323 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.skeleton-hero { height: 160px; margin: 20px 16px 0; border-radius: var(--radius); }
+.skeleton-row  { height: 68px;  margin: 0 16px 8px; }
+
+/* ── Keyboard focus ── */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.12);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
